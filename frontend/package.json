@@ -14,11 +14,13 @@
     "@turf/bbox": "^7.3.2",
     "@turf/helpers": "^7.3.2",
     "@types/geojson": "^7946.0.16",
+    "@types/recharts": "^1.8.29",
     "lucide-react": "^0.562.0",
     "mapbox-gl": "^3.18.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-map-gl": "^8.1.0",
+    "recharts": "^3.6.0",
     "togeojson": "^0.16.0"
   },
   "devDependencies": {
