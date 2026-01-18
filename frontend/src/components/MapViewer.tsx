@@ -104,7 +104,7 @@ export function MapViewer({ tripId }: MapViewerProps) {
                     zoom: 7
                 }}
                 style={{ width: '100%', height: '100%' }}
-                mapStyle="mapbox://styles/mapbox/navigation-night-v1"
+                mapStyle="mapbox://styles/mapbox/dark-v11"
                 mapboxAccessToken={MAPBOX_TOKEN}
             >
                 {geoJsonData && (
