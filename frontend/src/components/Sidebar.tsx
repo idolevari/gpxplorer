@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Network, MapPin } from 'lucide-react';
 
 interface Trip {
