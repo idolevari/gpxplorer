@@ -7,7 +7,7 @@ import * as togeojson from 'togeojson';
 import bbox from '@turf/bbox';
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'; // Fallback for dev
+const API_URL = import.meta.env.VITE_API_URL || 'https://gpxplorer-production.up.railway.app';
 
 interface MapViewerProps {
     tripId: string | null;
