@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { Layout } from './components/Layout';
 import { MapViewer } from './components/MapViewer';
 
-const API_URL = 'http://localhost:8000'; // In dev
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'; // Fallback for dev
 
 function App() {
   const [trips, setTrips] = useState([]);
