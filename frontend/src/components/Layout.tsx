@@ -1,6 +1,7 @@
 import React from 'react';
 import { Map, Share2, Download } from 'lucide-react';
 import { Sidebar } from './Sidebar';
+import { StatsBar } from './StatsBar';
 
 interface Trip {
     id: string;
@@ -14,9 +15,21 @@ interface LayoutProps {
     selectedTripId: string | null;
     onSelectTrip: (id: string) => void;
     isLoadingTrips: boolean;
+    stats?: any;
+    graphData?: any;
+    isMetricsLoading?: boolean;
 }
 
-export function Layout({ children, trips, selectedTripId, onSelectTrip, isLoadingTrips }: LayoutProps) {
+export function Layout({
+    children,
+    trips,
+    selectedTripId,
+    onSelectTrip,
+    isLoadingTrips,
+    stats,
+    graphData,
+    isMetricsLoading
+}: LayoutProps) {
     return (
         <div className="flex flex-col h-screen overflow-hidden selection:bg-[var(--accent-primary)] selection:text-white">
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/20 via-[#030712] to-[#030712] pointer-events-none z-0" />
@@ -39,7 +52,8 @@ export function Layout({ children, trips, selectedTripId, onSelectTrip, isLoadin
                     <button
                         onClick={() => {
                             if (selectedTripId) {
-                                window.open(`http://localhost:8000/api/trips/${selectedTripId}/download`, '_blank');
+                                const API_URL = import.meta.env.DEV ? 'http://localhost:8000' : 'https://gpxplorer-production.up.railway.app';
+                                window.open(`${API_URL}/api/trips/${selectedTripId}/download`, '_blank');
                             }
                         }}
                         disabled={!selectedTripId}
@@ -57,8 +71,13 @@ export function Layout({ children, trips, selectedTripId, onSelectTrip, isLoadin
                     onSelectTrip={onSelectTrip}
                     isLoading={isLoadingTrips}
                 />
-                <main className="flex-1 relative">
-                    {children}
+                <main className="flex-1 relative flex flex-col">
+                    <div className="flex-1 relative">
+                        {children}
+                    </div>
+                    <div className="relative shrink-0 z-20">
+                        <StatsBar stats={stats || null} graphData={graphData || null} isLoading={!!isMetricsLoading} />
+                    </div>
                 </main>
             </div>
         </div>

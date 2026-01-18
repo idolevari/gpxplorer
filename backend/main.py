@@ -1,32 +1,26 @@
-from fastapi import FastAPI, HTTPException, Response as APIResponse
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-# from fastapi.responses import FileResponse # Removed unused
+from fastapi.responses import FileResponse, JSONResponse
 import os
+import gpxpy
+import gpxpy.gpx
+import math
 
-app = FastAPI(title="GPXplorer API")
+app = FastAPI()
 
-# Configure CORS
+# Allow CORS for frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify the frontend domain
+    allow_origins=["*"],  # Allow all origins for dev/prod
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-@app.get("/")
-async def read_root():
-    return {"message": "Welcome to GPXplorer API"}
-
-@app.get("/api/health")
-async def health_check():
-    return {"status": "ok"}
-
-# Trip Configuration
 TRIPS = {
     "all-trips": {
         "name": "All Trips (Show Everything)",
-        "description": "Visualize all available trips on the map simultaneously.",
+        "description": "View all available tracks on the map simultaneously.",
         "type": "composite",
         "distinct_tracks": True,
         "files": [
@@ -60,117 +54,191 @@ TRIPS = {
     },
     "dan-to-ginosar": {
         "name": "Dan to Ginosar",
-        "description": "Segment 1: Northern Israel, from Dan to the Sea of Galilee.",
+        "description": "Northern segment starting from Dan.",
         "type": "single",
         "file": "dan_to_ginosar.gpx"
     },
     "ginosar-to-aviel": {
         "name": "Ginosar to Aviel",
-        "description": "Segment 2: Lower Galilee to the Coast.",
+        "description": "Continuing south through the Galilee.",
         "type": "single",
         "file": "ginosar_to_aviel.gpx"
     },
     "aviel-to-hod-hasharon": {
         "name": "Aviel to Hod Hasharon",
-        "description": "Segment 3: Along the Sharon plain.",
+        "description": "Moving towards the center of the country.",
         "type": "single",
         "file": "aviel_to_hod_hasharon.gpx"
     },
     "hod-hasharon-to-tel-aviv": {
         "name": "Hod Hasharon to Tel Aviv",
-        "description": "Segment 4: Urban trail into the Metropolis.",
+        "description": "Approaching the metropolitan area.",
         "type": "single",
         "file": "hod_hasharon_to_tel_aviv.gpx"
     },
     "tel-aviv-to-beer-sheva": {
         "name": "Tel Aviv to Beer Sheva",
-        "description": "Segment 5: Central plains to the Negev capital.",
+        "description": "Heading south into the desert gateway.",
         "type": "single",
         "file": "tel_aviv_to_beer_sheva.gpx"
     },
     "beer-sheva-to-sde-boker": {
         "name": "Beer Sheva to Sde Boker",
-        "description": "Segment 6: Into the Deep Desert.",
+        "description": "Deep into the Negev desert.",
         "type": "single",
         "file": "beer_sheva_to_sde_boker.gpx"
     },
     "sde-boker-to-tzofar": {
         "name": "Sde Boker to Tzofar",
-        "description": "Segment 7: Craters and Arava.",
+        "description": "Remote desert trails.",
         "type": "single",
         "file": "sde_boker_to_tzofar.gpx"
     },
     "tzofar-to-yahel": {
         "name": "Tzofar to Yahel",
-        "description": "Segment 8: Southern Arava.",
+        "description": "Continuing through the Arava.",
         "type": "single",
         "file": "tzofar_to_yahel.gpx"
     },
     "yahel-to-eilat": {
         "name": "Yahel to Eilat",
-        "description": "Segment 9: Eilat Mountains to the Red Sea.",
+        "description": "The final stretch to the Red Sea.",
         "type": "single",
         "file": "yahel_to_eilat.gpx"
     }
 }
 
+def calculate_stats(gpx):
+    """Calculates statistics for a parsed GPX object."""
+    moving_data = gpx.get_moving_data()
+    uphill, downhill = gpx.get_uphill_downhill()
+    
+    # Basic Stats
+    stats = {
+        "distance_km": round(gpx.length_3d() / 1000, 2),
+        "elevation_gain_m": round(uphill),
+        "elevation_loss_m": round(downhill),
+        "moving_time_s": moving_data.moving_time,
+        "stopped_time_s": moving_data.stopped_time,
+        "max_speed_kmh": round(moving_data.max_speed * 3.6, 1) if moving_data.max_speed else 0,
+        "avg_speed_kmh": round(moving_data.moving_distance / moving_data.moving_time * 3.6, 1) if moving_data.moving_time > 0 else 0
+    }
+    
+    # Graph Data Generation
+    # We want a manageable number of points for the frontend (e.g., ~200)
+    points = []
+    for track in gpx.tracks:
+        for segment in track.segments:
+            points.extend(segment.points)
+            
+    total_points = len(points)
+    target_points = 200
+    step = max(1, total_points // target_points)
+    
+    graph_data = []
+    dist_sum = 0
+    prev_p = None
+    
+    for i, p in enumerate(points):
+        if prev_p:
+            d = p.distance_3d(prev_p)
+            if d:
+                dist_sum += d
+        
+        # Add point if it's a step interval OR the very last point
+        if i % step == 0 or i == total_points - 1:
+            graph_data.append({
+                "distance": round(dist_sum / 1000, 2), # km
+                "elevation": round(p.elevation, 1) if p.elevation else 0
+            })
+        
+        prev_p = p
+        
+    return {
+        "stats": stats,
+        "graph": graph_data
+    }
+
 @app.get("/api/trips")
 async def get_trips():
-    return [
-        {"id": key, "name": val["name"], "description": val["description"]}
-        for key, val in TRIPS.items()
-    ]
+    """Returns a list of available trips."""
+    trip_list = []
+    for trip_id, data in TRIPS.items():
+        trip_list.append({
+            "id": trip_id,
+            "name": data["name"],
+            "description": data["description"]
+        })
+    return trip_list
 
 @app.get("/api/trips/{trip_id}/download")
 async def download_trip_gpx(trip_id: str):
+    """
+    Returns the GPX file content.
+    If 'composite', merges multiples files.
+    """
     if trip_id not in TRIPS:
         raise HTTPException(status_code=404, detail="Trip not found")
-    
-    trip = TRIPS[trip_id]
-    import gpxpy
-    import gpxpy.gpx
-    
-    base_path = "trips"
-    files_to_merge = []
-    # Default to merging into one track unless specified otherwise
-    distinct_tracks = trip.get("distinct_tracks", False)
 
-    if trip["type"] == "composite":
-        files_to_merge = trip["files"]
+    trip_info = TRIPS[trip_id]
+    
+    if trip_info["type"] == "composite":
+        # Create a new GPX object to hold the merged data
+        combined_gpx = gpxpy.gpx.GPX()
+
+        for filename in trip_info["files"]:
+            file_path = os.path.join("trips", filename)
+            if os.path.exists(file_path):
+                # Parse each file
+                with open(file_path, "r") as f:
+                    gpx = gpxpy.parse(f)
+                    
+                    if trip_info.get("distinct_tracks"):
+                         # Keep tracks distinct (add them as separate tracks)
+                         combined_gpx.tracks.extend(gpx.tracks)
+                    else:
+                         # Merge all segments into one long track (original behavior)
+                         # This logic might need refinement if 'distinct_tracks' is strictly preferred now
+                         if not combined_gpx.tracks:
+                             combined_gpx.tracks.append(gpxpy.gpx.GPXTrack())
+                         
+                         for track in gpx.tracks:
+                             for segment in track.segments:
+                                  combined_gpx.tracks[0].segments.append(segment)
+
+        # Return the Combined GPX as a string response
+        return combined_gpx.to_xml()
+
     else:
-        files_to_merge = [trip["file"]]
+        # Single file download
+        file_path = os.path.join("trips", trip_info["file"])
+        if not os.path.exists(file_path):
+             raise HTTPException(status_code=404, detail="GPX file not found")
+        return FileResponse(file_path, media_type='application/gpx+xml', filename=f"{trip_id}.gpx")
 
-    merged_gpx = gpxpy.gpx.GPX()
+@app.get("/api/trips/{trip_id}/metrics")
+async def get_trip_metrics(trip_id: str):
+    """Returns statistics and elevation profile data for a trip."""
+    if trip_id not in TRIPS:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    trip_info = TRIPS[trip_id]
     
-    if distinct_tracks:
-        # Create separate tracks for each file
-        for fname in files_to_merge:
-            fpath = os.path.join(base_path, fname)
-            if os.path.exists(fpath):
-                with open(fpath, 'r') as gpx_file:
-                    gpx = gpxpy.parse(gpx_file)
-                    # Create a new track for this file to preserve identity
-                    # Use the file name or existing track name as the track name
-                    for source_track in gpx.tracks:
-                        new_track = gpxpy.gpx.GPXTrack(name=source_track.name or fname)
-                        new_track.segments.extend(source_track.segments)
-                        merged_gpx.tracks.append(new_track)
+    if trip_info["type"] == "composite":
+        combined_gpx = gpxpy.gpx.GPX()
+        for filename in trip_info["files"]:
+            file_path = os.path.join("trips", filename)
+            if os.path.exists(file_path):
+                with open(file_path, "r") as f:
+                    gpx = gpxpy.parse(f)
+                    combined_gpx.tracks.extend(gpx.tracks)
+        return calculate_stats(combined_gpx)
+
     else:
-        # Merge all into one single track
-        merged_track = gpxpy.gpx.GPXTrack(name=trip["name"])
-        merged_gpx.tracks.append(merged_track)
-
-        for fname in files_to_merge:
-            fpath = os.path.join(base_path, fname)
-            if os.path.exists(fpath):
-                with open(fpath, 'r') as gpx_file:
-                    gpx = gpxpy.parse(gpx_file)
-                    for track in gpx.tracks:
-                        for segment in track.segments:
-                            merged_track.segments.append(segment)
-    
-    return APIResponse(
-        content=merged_gpx.to_xml(), 
-        media_type="application/gpx+xml", 
-        headers={"Content-Disposition": f"attachment; filename={trip_id}.gpx"}
-    )
+        file_path = os.path.join("trips", trip_info["file"])
+        if not os.path.exists(file_path):
+             raise HTTPException(status_code=404, detail="GPX file not found")
+        
+        with open(file_path, "r") as f:
+            gpx = gpxpy.parse(f)
+            return calculate_stats(gpx)
