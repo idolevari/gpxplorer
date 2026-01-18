@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react';
 import { Layout } from './components/Layout';
 import { MapViewer } from './components/MapViewer';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'; // Fallback for dev
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+console.log('🔌 GPXplorer API Mode:', API_URL);
 
 function App() {
   const [trips, setTrips] = useState([]);
