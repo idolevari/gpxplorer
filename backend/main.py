@@ -1,6 +1,6 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response as APIResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+# from fastapi.responses import FileResponse # Removed unused
 import os
 
 app = FastAPI(title="GPXplorer API")
@@ -22,35 +22,155 @@ async def read_root():
 async def health_check():
     return {"status": "ok"}
 
-@app.get("/api/trip/example")
-async def get_example_trip():
-    # Return metadata and URL for the example trip
-    # For now, we'll just mock it or serve a file if we had one.
-    return {
-        "id": "example-trip",
-        "name": "Classic Trek",
-        "description": "A beautiful scenic route.",
-        "gpx_url": "/api/trip/example/download"
+# Trip Configuration
+TRIPS = {
+    "all-trips": {
+        "name": "All Trips (Show Everything)",
+        "description": "Visualize all available trips on the map simultaneously.",
+        "type": "composite",
+        "distinct_tracks": True,
+        "files": [
+            "dan_to_ginosar.gpx",
+            "ginosar_to_aviel.gpx",
+            "aviel_to_hod_hasharon.gpx",
+            "hod_hasharon_to_tel_aviv.gpx",
+            "tel_aviv_to_beer_sheva.gpx",
+            "beer_sheva_to_sde_boker.gpx",
+            "sde_boker_to_tzofar.gpx",
+            "tzofar_to_yahel.gpx",
+            "yahel_to_eilat.gpx"
+        ]
+    },
+    "cross-israel": {
+        "name": "Cross Israel Trail (Full)",
+        "description": "The epic journey across Israel from North to South (Dan to Eilat).",
+        "type": "composite",
+        "distinct_tracks": True,
+        "files": [
+            "dan_to_ginosar.gpx",
+            "ginosar_to_aviel.gpx",
+            "aviel_to_hod_hasharon.gpx",
+            "hod_hasharon_to_tel_aviv.gpx",
+            "tel_aviv_to_beer_sheva.gpx",
+            "beer_sheva_to_sde_boker.gpx",
+            "sde_boker_to_tzofar.gpx",
+            "tzofar_to_yahel.gpx",
+            "yahel_to_eilat.gpx"
+        ]
+    },
+    "dan-to-ginosar": {
+        "name": "Dan to Ginosar",
+        "description": "Segment 1: Northern Israel, from Dan to the Sea of Galilee.",
+        "type": "single",
+        "file": "dan_to_ginosar.gpx"
+    },
+    "ginosar-to-aviel": {
+        "name": "Ginosar to Aviel",
+        "description": "Segment 2: Lower Galilee to the Coast.",
+        "type": "single",
+        "file": "ginosar_to_aviel.gpx"
+    },
+    "aviel-to-hod-hasharon": {
+        "name": "Aviel to Hod Hasharon",
+        "description": "Segment 3: Along the Sharon plain.",
+        "type": "single",
+        "file": "aviel_to_hod_hasharon.gpx"
+    },
+    "hod-hasharon-to-tel-aviv": {
+        "name": "Hod Hasharon to Tel Aviv",
+        "description": "Segment 4: Urban trail into the Metropolis.",
+        "type": "single",
+        "file": "hod_hasharon_to_tel_aviv.gpx"
+    },
+    "tel-aviv-to-beer-sheva": {
+        "name": "Tel Aviv to Beer Sheva",
+        "description": "Segment 5: Central plains to the Negev capital.",
+        "type": "single",
+        "file": "tel_aviv_to_beer_sheva.gpx"
+    },
+    "beer-sheva-to-sde-boker": {
+        "name": "Beer Sheva to Sde Boker",
+        "description": "Segment 6: Into the Deep Desert.",
+        "type": "single",
+        "file": "beer_sheva_to_sde_boker.gpx"
+    },
+    "sde-boker-to-tzofar": {
+        "name": "Sde Boker to Tzofar",
+        "description": "Segment 7: Craters and Arava.",
+        "type": "single",
+        "file": "sde_boker_to_tzofar.gpx"
+    },
+    "tzofar-to-yahel": {
+        "name": "Tzofar to Yahel",
+        "description": "Segment 8: Southern Arava.",
+        "type": "single",
+        "file": "tzofar_to_yahel.gpx"
+    },
+    "yahel-to-eilat": {
+        "name": "Yahel to Eilat",
+        "description": "Segment 9: Eilat Mountains to the Red Sea.",
+        "type": "single",
+        "file": "yahel_to_eilat.gpx"
     }
+}
 
-# Placeholder for GPX file serving
-# In a real app, this would serve a file from disk or S3
-@app.get("/api/trip/example/download")
-async def download_example_gpx():
-    # We will create a dummy GPX file or read a real one
-    file_path = "example.gpx"
-    if not os.path.exists(file_path):
-         # Create a dummy GPX for demonstration
-        with open(file_path, "w") as f:
-            f.write("""<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="GPXplorer">
-  <trk>
-    <name>Example Loop</name>
-    <trkseg>
-      <trkpt lat="37.7749" lon="-122.4194"><ele>10</ele></trkpt>
-      <trkpt lat="37.7750" lon="-122.4195"><ele>12</ele></trkpt>
-      <trkpt lat="37.7751" lon="-122.4196"><ele>15</ele></trkpt>
-    </trkseg>
-  </trk>
-</gpx>""")
-    return FileResponse(file_path, media_type='application/gpx+xml', filename='example.gpx')
+@app.get("/api/trips")
+async def get_trips():
+    return [
+        {"id": key, "name": val["name"], "description": val["description"]}
+        for key, val in TRIPS.items()
+    ]
+
+@app.get("/api/trips/{trip_id}/download")
+async def download_trip_gpx(trip_id: str):
+    if trip_id not in TRIPS:
+        raise HTTPException(status_code=404, detail="Trip not found")
+    
+    trip = TRIPS[trip_id]
+    import gpxpy
+    import gpxpy.gpx
+    
+    base_path = "trips"
+    files_to_merge = []
+    # Default to merging into one track unless specified otherwise
+    distinct_tracks = trip.get("distinct_tracks", False)
+
+    if trip["type"] == "composite":
+        files_to_merge = trip["files"]
+    else:
+        files_to_merge = [trip["file"]]
+
+    merged_gpx = gpxpy.gpx.GPX()
+    
+    if distinct_tracks:
+        # Create separate tracks for each file
+        for fname in files_to_merge:
+            fpath = os.path.join(base_path, fname)
+            if os.path.exists(fpath):
+                with open(fpath, 'r') as gpx_file:
+                    gpx = gpxpy.parse(gpx_file)
+                    # Create a new track for this file to preserve identity
+                    # Use the file name or existing track name as the track name
+                    for source_track in gpx.tracks:
+                        new_track = gpxpy.gpx.GPXTrack(name=source_track.name or fname)
+                        new_track.segments.extend(source_track.segments)
+                        merged_gpx.tracks.append(new_track)
+    else:
+        # Merge all into one single track
+        merged_track = gpxpy.gpx.GPXTrack(name=trip["name"])
+        merged_gpx.tracks.append(merged_track)
+
+        for fname in files_to_merge:
+            fpath = os.path.join(base_path, fname)
+            if os.path.exists(fpath):
+                with open(fpath, 'r') as gpx_file:
+                    gpx = gpxpy.parse(gpx_file)
+                    for track in gpx.tracks:
+                        for segment in track.segments:
+                            merged_track.segments.append(segment)
+    
+    return APIResponse(
+        content=merged_gpx.to_xml(), 
+        media_type="application/gpx+xml", 
+        headers={"Content-Disposition": f"attachment; filename={trip_id}.gpx"}
+    )

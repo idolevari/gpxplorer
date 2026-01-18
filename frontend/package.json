@@ -11,6 +11,9 @@
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.1.18",
+    "@turf/bbox": "^7.3.2",
+    "@turf/helpers": "^7.3.2",
+    "@types/geojson": "^7946.0.16",
     "lucide-react": "^0.562.0",
     "mapbox-gl": "^3.18.0",
     "react": "^19.2.0",
