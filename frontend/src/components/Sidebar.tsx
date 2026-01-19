@@ -1,5 +1,5 @@
 
-import { Network, MapPin } from 'lucide-react';
+
 
 interface Trip {
     id: string;

@@ -63,9 +63,9 @@ export function MapViewer({ tripIds, hoveredPoint }: MapViewerProps) {
         Promise.all(fetchPromises)
             .then(results => {
                 // Merge all feature collections
-                const allFeatures = results.flatMap(fc => fc.features || []);
+                const allFeatures = results.flatMap((fc: any) => fc.features || []);
                 const combinedGeoJson = {
-                    type: "FeatureCollection",
+                    type: "FeatureCollection" as const,
                     features: allFeatures
                 };
 
@@ -73,6 +73,7 @@ export function MapViewer({ tripIds, hoveredPoint }: MapViewerProps) {
 
                 // Fit bounds to all trips
                 if (allFeatures.length > 0) {
+                    // @ts-ignore
                     const box = bbox(combinedGeoJson);
                     if (mapRef.current) {
                         mapRef.current.fitBounds(
