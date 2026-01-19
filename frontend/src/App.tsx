@@ -7,7 +7,7 @@ const API_URL = import.meta.env.DEV ? 'http://localhost:8000' : 'https://gpxplor
 
 function App() {
   const [trips, setTrips] = useState([]);
-  const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
+  const [selectedTrips, setSelectedTrips] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // New States for Metrics
@@ -16,6 +16,13 @@ function App() {
   const [isMetricsLoading, setIsMetricsLoading] = useState(false);
   const [hoveredPoint, setHoveredPoint] = useState<{ lat: number, lon: number } | null>(null);
 
+  // Toggle trip selection
+  const toggleTrip = (id: string) => {
+    setSelectedTrips(prev =>
+      prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]
+    );
+  };
+
   // Initial Fetch of Trips
   useEffect(() => {
     fetch(`${API_URL}/api/trips`)
@@ -23,22 +30,26 @@ function App() {
       .then(data => {
         setTrips(data);
         if (data.length > 0) {
-          setSelectedTripId(data[0].id);
+          // By default, select nothing or maybe the first one? Let's select nothing as per "user chooses"
         }
       })
       .catch(err => console.error("Failed to load trips", err))
       .finally(() => setIsLoading(false));
   }, []);
 
-  // Fetch Metrics when Trip Changes
+  // Fetch Metrics when Trip Changes - defaulting to showing stats for the *last* selected trip just to show something, or maybe hide it? 
+  // For now, let's just pick the last one selected to show stats for.
+  const activeTripId = selectedTrips.length > 0 ? selectedTrips[selectedTrips.length - 1] : null;
+
   useEffect(() => {
-    if (!selectedTripId) return;
+    if (!activeTripId) {
+      setTripStats(null);
+      setGraphData(null);
+      return;
+    }
 
     setIsMetricsLoading(true);
-    setTripStats(null);
-    setGraphData(null);
-
-    fetch(`${API_URL}/api/trips/${selectedTripId}/metrics`)
+    fetch(`${API_URL}/api/trips/${activeTripId}/metrics`)
       .then(res => res.json())
       .then(data => {
         setTripStats(data.stats);
@@ -47,13 +58,13 @@ function App() {
       .catch(err => console.error("Failed to load metrics", err))
       .finally(() => setIsMetricsLoading(false));
 
-  }, [selectedTripId]);
+  }, [activeTripId]);
 
   return (
     <Layout
       trips={trips}
-      selectedTripId={selectedTripId}
-      onSelectTrip={setSelectedTripId}
+      selectedTrips={selectedTrips}
+      onToggleTrip={toggleTrip}
       isLoadingTrips={isLoading}
       stats={tripStats}
       graphData={graphData}
@@ -61,7 +72,7 @@ function App() {
       hoveredPoint={hoveredPoint}
       onHoverPoint={setHoveredPoint}
     >
-      <MapViewer tripId={selectedTripId} hoveredPoint={hoveredPoint} />
+      <MapViewer tripIds={selectedTrips} hoveredPoint={hoveredPoint} />
     </Layout>
   );
 }

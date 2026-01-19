@@ -18,40 +18,6 @@ app.add_middleware(
 )
 
 TRIPS = {
-    "all-trips": {
-        "name": "All Trips (Show Everything)",
-        "description": "View all available tracks on the map simultaneously.",
-        "type": "composite",
-        "distinct_tracks": True,
-        "files": [
-            "dan_to_ginosar.gpx",
-            "ginosar_to_aviel.gpx",
-            "aviel_to_hod_hasharon.gpx",
-            "hod_hasharon_to_tel_aviv.gpx",
-            "tel_aviv_to_beer_sheva.gpx",
-            "beer_sheva_to_sde_boker.gpx",
-            "sde_boker_to_tzofar.gpx",
-            "tzofar_to_yahel.gpx",
-            "yahel_to_eilat.gpx"
-        ]
-    },
-    "cross-israel": {
-        "name": "Cross Israel Trail (Full)",
-        "description": "The epic journey across Israel from North to South (Dan to Eilat).",
-        "type": "composite",
-        "distinct_tracks": True,
-        "files": [
-            "dan_to_ginosar.gpx",
-            "ginosar_to_aviel.gpx",
-            "aviel_to_hod_hasharon.gpx",
-            "hod_hasharon_to_tel_aviv.gpx",
-            "tel_aviv_to_beer_sheva.gpx",
-            "beer_sheva_to_sde_boker.gpx",
-            "sde_boker_to_tzofar.gpx",
-            "tzofar_to_yahel.gpx",
-            "yahel_to_eilat.gpx"
-        ]
-    },
     "dan-to-ginosar": {
         "name": "Dan to Ginosar",
         "description": "Northern segment starting from Dan.",

@@ -47,21 +47,21 @@ export function StatsBar({ stats, graphData, isLoading, onHover }: StatsBarProps
     if (!stats && !isLoading) return null;
 
     return (
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-[#030712]/90 backdrop-blur-xl border-t border-[var(--glass-border)] z-20 flex transition-all duration-300">
+        <div className="absolute bottom-0 left-0 right-0 h-auto md:h-32 bg-[#030712]/90 backdrop-blur-xl border-t border-[var(--glass-border)] z-20 flex flex-col md:flex-row transition-all duration-300">
             {/* Left: Metrics Grid */}
-            <div className="shrink-0 p-3 flex flex-col justify-center border-r border-[var(--glass-border)] min-w-[320px]">
+            <div className="shrink-0 p-3 flex flex-col justify-center border-b md:border-b-0 md:border-r border-[var(--glass-border)] w-full md:w-auto md:min-w-[320px]">
                 {isLoading ? (
-                    <div className="flex items-center justify-center h-full text-[var(--text-secondary)] text-sm">
+                    <div className="flex items-center justify-center h-full text-[var(--text-secondary)] text-sm py-2 md:py-0">
                         Loading Metrics...
                     </div>
                 ) : (
-                    <div className="grid grid-cols-3 gap-x-6 gap-y-2">
+                    <div className="grid grid-cols-3 gap-x-4 md:gap-x-6 gap-y-2">
                         {/* Row 1 */}
                         <div className="space-y-0.5">
                             <div className="flex items-center gap-1.5 text-[var(--text-secondary)] text-[10px] uppercase tracking-wider">
                                 <Activity className="w-3 h-3" /> Distance
                             </div>
-                            <div className="text-lg font-bold text-white font-mono leading-none">
+                            <div className="text-base md:text-lg font-bold text-white font-mono leading-none">
                                 {stats?.distance_km} <span className="text-[10px] font-normal text-gray-500">km</span>
                             </div>
                         </div>
@@ -70,7 +70,7 @@ export function StatsBar({ stats, graphData, isLoading, onHover }: StatsBarProps
                             <div className="flex items-center gap-1.5 text-[var(--text-secondary)] text-[10px] uppercase tracking-wider">
                                 <Mountain className="w-3 h-3" /> Max Elev
                             </div>
-                            <div className="text-lg font-bold text-white font-mono leading-none">
+                            <div className="text-base md:text-lg font-bold text-white font-mono leading-none">
                                 {graphData ? Math.max(...graphData.map(p => p.elevation)) : 0} <span className="text-[10px] font-normal text-gray-500">m</span>
                             </div>
                         </div>
@@ -79,7 +79,7 @@ export function StatsBar({ stats, graphData, isLoading, onHover }: StatsBarProps
                             <div className="flex items-center gap-1.5 text-green-400 text-[10px] uppercase tracking-wider">
                                 <ArrowUp className="w-3 h-3" /> Gain
                             </div>
-                            <div className="text-base font-bold text-white font-mono leading-none">
+                            <div className="text-sm md:text-base font-bold text-white font-mono leading-none">
                                 +{stats?.elevation_gain_m} m
                             </div>
                         </div>
@@ -89,7 +89,7 @@ export function StatsBar({ stats, graphData, isLoading, onHover }: StatsBarProps
                             <div className="flex items-center gap-1.5 text-[var(--text-secondary)] text-[10px] uppercase tracking-wider">
                                 <Clock className="w-3 h-3" /> Time
                             </div>
-                            <div className="text-lg font-bold text-white font-mono leading-none">
+                            <div className="text-base md:text-lg font-bold text-white font-mono leading-none">
                                 {formatTime(stats?.moving_time_s || 0)}
                             </div>
                         </div>
@@ -98,7 +98,7 @@ export function StatsBar({ stats, graphData, isLoading, onHover }: StatsBarProps
                             <div className="flex items-center gap-1.5 text-[var(--text-secondary)] text-[10px] uppercase tracking-wider">
                                 <Activity className="w-3 h-3" /> Avg Spd
                             </div>
-                            <div className="text-lg font-bold text-white font-mono leading-none">
+                            <div className="text-base md:text-lg font-bold text-white font-mono leading-none">
                                 {stats?.avg_speed_kmh} <span className="text-[10px] font-normal text-gray-500">km/h</span>
                             </div>
                         </div>
@@ -107,7 +107,7 @@ export function StatsBar({ stats, graphData, isLoading, onHover }: StatsBarProps
                             <div className="flex items-center gap-1.5 text-red-400 text-[10px] uppercase tracking-wider">
                                 <ArrowDown className="w-3 h-3" /> Loss
                             </div>
-                            <div className="text-base font-bold text-white font-mono leading-none">
+                            <div className="text-sm md:text-base font-bold text-white font-mono leading-none">
                                 -{stats?.elevation_loss_m} m
                             </div>
                         </div>
@@ -116,7 +116,7 @@ export function StatsBar({ stats, graphData, isLoading, onHover }: StatsBarProps
             </div>
 
             {/* Right: Elevation Profile Graph */}
-            <div className="flex-1 p-2 relative min-w-0">
+            <div className="flex-1 p-2 relative min-w-0 h-24 md:h-full">
                 {/* Title Overlay */}
                 <h3 className="absolute top-2 left-2 text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest z-10 bg-[#030712]/40 px-1.5 py-0.5 rounded pointer-events-none">
                     Elevation Profile

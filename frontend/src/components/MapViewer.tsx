@@ -10,7 +10,7 @@ const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 const API_URL = import.meta.env.DEV ? 'http://localhost:8000' : 'https://gpxplorer-production.up.railway.app';
 
 interface MapViewerProps {
-    tripId: string | null;
+    tripIds: string[];
     hoveredPoint?: { lat: number, lon: number } | null;
 }
 
@@ -24,38 +24,56 @@ const NEON_COLORS = [
     '#06b6d4', // cyan-500
 ];
 
-export function MapViewer({ tripId, hoveredPoint }: MapViewerProps) {
+export function MapViewer({ tripIds, hoveredPoint }: MapViewerProps) {
     const [geoJsonData, setGeoJsonData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(false);
     const mapRef = useRef<MapRef>(null);
 
     useEffect(() => {
-        if (!tripId) return;
+        if (tripIds.length === 0) {
+            setGeoJsonData(null);
+            return;
+        }
 
         setIsLoading(true);
-        // Fetch the selected trip GPX
-        fetch(`${API_URL}/api/trips/${tripId}/download`)
-            .then(response => response.text())
-            .then(gpxText => {
-                const parser = new DOMParser();
-                const gpx = parser.parseFromString(gpxText, "application/xml");
-                const converted = togeojson.gpx(gpx);
 
-                // Assign distinct colors to features
-                if (converted.features) {
-                    converted.features.forEach((feature: any, index: number) => {
-                        feature.properties = {
-                            ...feature.properties,
-                            color: NEON_COLORS[index % NEON_COLORS.length]
-                        };
-                    });
-                }
+        const fetchPromises = tripIds.map((id, index) =>
+            fetch(`${API_URL}/api/trips/${id}/download`)
+                .then(res => res.text())
+                .then(gpxText => {
+                    const parser = new DOMParser();
+                    const gpx = parser.parseFromString(gpxText, "application/xml");
+                    const converted = togeojson.gpx(gpx);
 
-                setGeoJsonData(converted);
+                    // Assign color to all features of this trip
+                    const color = NEON_COLORS[index % NEON_COLORS.length];
+                    if (converted.features) {
+                        converted.features.forEach((feature: any) => {
+                            feature.properties = {
+                                ...feature.properties,
+                                color: color,
+                                tripId: id
+                            };
+                        });
+                    }
+                    return converted;
+                })
+        );
 
-                // Calculate bbox and fit bounds
-                if (converted && converted.features.length > 0) {
-                    const box = bbox(converted);
+        Promise.all(fetchPromises)
+            .then(results => {
+                // Merge all feature collections
+                const allFeatures = results.flatMap(fc => fc.features || []);
+                const combinedGeoJson = {
+                    type: "FeatureCollection",
+                    features: allFeatures
+                };
+
+                setGeoJsonData(combinedGeoJson);
+
+                // Fit bounds to all trips
+                if (allFeatures.length > 0) {
+                    const box = bbox(combinedGeoJson);
                     if (mapRef.current) {
                         mapRef.current.fitBounds(
                             [
@@ -67,9 +85,14 @@ export function MapViewer({ tripId, hoveredPoint }: MapViewerProps) {
                     }
                 }
             })
-            .catch(err => console.error("Error loading GPX:", err))
-            .finally(() => setIsLoading(false));
-    }, [tripId]);
+            .catch(err => {
+                console.error("Error loading trips:", err);
+            })
+            .finally(() => {
+                setIsLoading(false);
+            });
+
+    }, [tripIds]);
 
     if (!MAPBOX_TOKEN) {
         return (
@@ -79,10 +102,10 @@ export function MapViewer({ tripId, hoveredPoint }: MapViewerProps) {
         );
     }
 
-    if (!tripId) {
+    if (tripIds.length === 0) {
         return (
             <div className="flex items-center justify-center h-full bg-[#030712] text-[var(--text-secondary)]">
-                <p>Select a trip from the sidebar to view it on the map.</p>
+                <p>Select trips from the sidebar to view them on the map.</p>
             </div>
         );
     }
@@ -97,6 +120,27 @@ export function MapViewer({ tripId, hoveredPoint }: MapViewerProps) {
                     </div>
                 </div>
             )}
+            {/* Custom Zoom Controls */}
+            <div className="absolute top-4 right-4 flex flex-col gap-2 z-10">
+                <button
+                    onClick={() => mapRef.current?.zoomIn()}
+                    className="w-10 h-10 rounded-lg bg-[var(--glass-bg)] border border-[var(--glass-border)] text-[var(--text-primary)] hover:bg-[var(--accent-primary)] hover:text-white transition-colors flex items-center justify-center backdrop-blur-md shadow-lg"
+                    aria-label="Zoom In"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                </button>
+                <button
+                    onClick={() => mapRef.current?.zoomOut()}
+                    className="w-10 h-10 rounded-lg bg-[var(--glass-bg)] border border-[var(--glass-border)] text-[var(--text-primary)] hover:bg-[var(--accent-primary)] hover:text-white transition-colors flex items-center justify-center backdrop-blur-md shadow-lg"
+                    aria-label="Zoom Out"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14" />
+                    </svg>
+                </button>
+            </div>
             <Map
                 ref={mapRef}
                 initialViewState={{
