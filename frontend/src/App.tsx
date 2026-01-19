@@ -14,6 +14,7 @@ function App() {
   const [tripStats, setTripStats] = useState(null);
   const [graphData, setGraphData] = useState(null);
   const [isMetricsLoading, setIsMetricsLoading] = useState(false);
+  const [hoveredPoint, setHoveredPoint] = useState<{ lat: number, lon: number } | null>(null);
 
   // Initial Fetch of Trips
   useEffect(() => {
@@ -57,8 +58,10 @@ function App() {
       stats={tripStats}
       graphData={graphData}
       isMetricsLoading={isMetricsLoading}
+      hoveredPoint={hoveredPoint}
+      onHoverPoint={setHoveredPoint}
     >
-      <MapViewer tripId={selectedTripId} />
+      <MapViewer tripId={selectedTripId} hoveredPoint={hoveredPoint} />
     </Layout>
   );
 }

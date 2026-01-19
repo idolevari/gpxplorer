@@ -149,7 +149,9 @@ def calculate_stats(gpx):
         if i % step == 0 or i == total_points - 1:
             graph_data.append({
                 "distance": round(dist_sum / 1000, 2), # km
-                "elevation": round(p.elevation, 1) if p.elevation else 0
+                "elevation": round(p.elevation, 1) if p.elevation else 0,
+                "lat": p.latitude,
+                "lon": p.longitude
             })
         
         prev_p = p

@@ -18,6 +18,8 @@ interface LayoutProps {
     stats?: any;
     graphData?: any;
     isMetricsLoading?: boolean;
+    hoveredPoint?: { lat: number, lon: number } | null;
+    onHoverPoint?: (point: { lat: number, lon: number } | null) => void;
 }
 
 export function Layout({
@@ -28,7 +30,8 @@ export function Layout({
     isLoadingTrips,
     stats,
     graphData,
-    isMetricsLoading
+    isMetricsLoading,
+    onHoverPoint
 }: LayoutProps) {
     return (
         <div className="flex flex-col h-screen overflow-hidden selection:bg-[var(--accent-primary)] selection:text-white">
@@ -76,7 +79,12 @@ export function Layout({
                         {children}
                     </div>
                     <div className="relative shrink-0 z-20">
-                        <StatsBar stats={stats || null} graphData={graphData || null} isLoading={!!isMetricsLoading} />
+                        <StatsBar
+                            stats={stats || null}
+                            graphData={graphData || null}
+                            isLoading={!!isMetricsLoading}
+                            onHover={onHoverPoint}
+                        />
                     </div>
                 </main>
             </div>
