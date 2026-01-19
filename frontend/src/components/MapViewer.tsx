@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import Map, { Source, Layer } from 'react-map-gl/mapbox';
+import Map, { Source, Layer, Marker } from 'react-map-gl/mapbox';
 import type { MapRef } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
 // @ts-ignore
@@ -11,6 +11,7 @@ const API_URL = import.meta.env.DEV ? 'http://localhost:8000' : 'https://gpxplor
 
 interface MapViewerProps {
     tripId: string | null;
+    hoveredPoint?: { lat: number, lon: number } | null;
 }
 
 const NEON_COLORS = [
@@ -23,7 +24,7 @@ const NEON_COLORS = [
     '#06b6d4', // cyan-500
 ];
 
-export function MapViewer({ tripId }: MapViewerProps) {
+export function MapViewer({ tripId, hoveredPoint }: MapViewerProps) {
     const [geoJsonData, setGeoJsonData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(false);
     const mapRef = useRef<MapRef>(null);
@@ -138,6 +139,17 @@ export function MapViewer({ tripId }: MapViewerProps) {
                             }}
                         />
                     </Source>
+                )}
+
+                {/* Hover Marker */}
+                {hoveredPoint && (
+                    <Marker longitude={hoveredPoint.lon} latitude={hoveredPoint.lat} anchor="center">
+
+                        <div className="relative z-[9999]">
+                            <div className="absolute -inset-4 rounded-full bg-[var(--accent-primary)] opacity-50 animate-ping"></div>
+                            <div className="w-6 h-6 rounded-full bg-[var(--accent-primary)] border-4 border-white shadow-[0_0_20px_var(--accent-primary)] box-content"></div>
+                        </div>
+                    </Marker>
                 )}
             </Map>
         </div>
