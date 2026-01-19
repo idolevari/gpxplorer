@@ -30,7 +30,8 @@ function App() {
       .then(data => {
         setTrips(data);
         if (data.length > 0) {
-          // By default, select nothing or maybe the first one? Let's select nothing as per "user chooses"
+          // Select all trips by default
+          setSelectedTrips(data.map((t: any) => t.id));
         }
       })
       .catch(err => console.error("Failed to load trips", err))

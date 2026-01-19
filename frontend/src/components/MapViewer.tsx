@@ -81,7 +81,7 @@ export function MapViewer({ tripIds, hoveredPoint }: MapViewerProps) {
                                 [box[0], box[1]], // minLng, minLat
                                 [box[2], box[3]]  // maxLng, maxLat
                             ],
-                            { padding: 50, duration: 1000 }
+                            { padding: 150, duration: 1000 }
                         );
                     }
                 }
