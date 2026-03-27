@@ -38,28 +38,73 @@ function App() {
       .finally(() => setIsLoading(false));
   }, []);
 
-  // Fetch Metrics when Trip Changes - defaulting to showing stats for the *last* selected trip just to show something, or maybe hide it? 
-  // For now, let's just pick the last one selected to show stats for.
-  const activeTripId = selectedTrips.length > 0 ? selectedTrips[selectedTrips.length - 1] : null;
-
+  // Fetch metrics for all selected trips and aggregate them
   useEffect(() => {
-    if (!activeTripId) {
+    if (selectedTrips.length === 0) {
       setTripStats(null);
       setGraphData(null);
       return;
     }
 
     setIsMetricsLoading(true);
-    fetch(`${API_URL}/api/trips/${activeTripId}/metrics`)
-      .then(res => res.json())
-      .then(data => {
-        setTripStats(data.stats);
-        setGraphData(data.graph);
+    Promise.all(
+      selectedTrips.map(id =>
+        fetch(`${API_URL}/api/trips/${id}/metrics`).then(res => res.json())
+      )
+    )
+      .then(results => {
+        const aggregated = results.reduce((acc, data) => {
+          const s = data.stats;
+          const maxElev = data.graph?.length
+            ? Math.max(...data.graph.map((p: any) => p.elevation))
+            : 0;
+          return {
+            distance_km: acc.distance_km + s.distance_km,
+            elevation_gain_m: acc.elevation_gain_m + s.elevation_gain_m,
+            elevation_loss_m: acc.elevation_loss_m + s.elevation_loss_m,
+            moving_time_s: acc.moving_time_s + s.moving_time_s,
+            stopped_time_s: acc.stopped_time_s + s.stopped_time_s,
+            max_speed_kmh: Math.max(acc.max_speed_kmh, s.max_speed_kmh),
+            avg_speed_kmh: acc.avg_speed_kmh + s.avg_speed_kmh,
+            max_elevation_m: Math.max(acc.max_elevation_m, maxElev),
+            _count: acc._count + 1,
+          };
+        }, {
+          distance_km: 0, elevation_gain_m: 0, elevation_loss_m: 0,
+          moving_time_s: 0, stopped_time_s: 0, max_speed_kmh: 0,
+          avg_speed_kmh: 0, max_elevation_m: 0, _count: 0,
+        });
+
+        const count = aggregated._count;
+        delete aggregated._count;
+
+        setTripStats({
+          ...aggregated,
+          distance_km: Math.round(aggregated.distance_km * 100) / 100,
+          elevation_gain_m: Math.round(aggregated.elevation_gain_m),
+          elevation_loss_m: Math.round(aggregated.elevation_loss_m),
+          max_speed_kmh: Math.round(aggregated.max_speed_kmh * 10) / 10,
+          avg_speed_kmh: Math.round((aggregated.avg_speed_kmh / count) * 10) / 10,
+          max_elevation_m: Math.round(aggregated.max_elevation_m),
+        });
+
+        // Concatenate graph data across all trips with continuous distance offset
+        let distanceOffset = 0;
+        const combinedGraph = results.flatMap(data => {
+          const points = (data.graph ?? []).map((p: any) => ({
+            ...p,
+            distance: Math.round((p.distance + distanceOffset) * 100) / 100,
+          }));
+          if (points.length > 0) {
+            distanceOffset += points[points.length - 1].distance - distanceOffset;
+          }
+          return points;
+        });
+        setGraphData(combinedGraph.length > 0 ? combinedGraph : null);
       })
       .catch(err => console.error("Failed to load metrics", err))
       .finally(() => setIsMetricsLoading(false));
-
-  }, [activeTripId]);
+  }, [selectedTrips]);
 
   return (
     <Layout
