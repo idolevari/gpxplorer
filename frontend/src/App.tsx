@@ -12,7 +12,7 @@ function App() {
 
   // New States for Metrics
   const [tripStats, setTripStats] = useState(null);
-  const [graphData, setGraphData] = useState(null);
+  const [graphData, setGraphData] = useState<any[] | null>(null);
   const [isMetricsLoading, setIsMetricsLoading] = useState(false);
   const [hoveredPoint, setHoveredPoint] = useState<{ lat: number, lon: number } | null>(null);
 
