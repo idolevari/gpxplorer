@@ -9,6 +9,7 @@ interface TripStats {
     stopped_time_s: number;
     max_speed_kmh: number;
     avg_speed_kmh: number;
+    max_elevation_m: number;
 }
 
 interface ElevationPoint {
@@ -71,7 +72,7 @@ export function StatsBar({ stats, graphData, isLoading, onHover }: StatsBarProps
                                 <Mountain className="w-3 h-3" /> Max Elev
                             </div>
                             <div className="text-base md:text-lg font-bold text-white font-mono leading-none">
-                                {graphData ? Math.max(...graphData.map(p => p.elevation)) : 0} <span className="text-[10px] font-normal text-gray-500">m</span>
+                                {stats?.max_elevation_m ?? 0} <span className="text-[10px] font-normal text-gray-500">m</span>
                             </div>
                         </div>
 
