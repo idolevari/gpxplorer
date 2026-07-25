@@ -86,6 +86,7 @@ def calculate_stats(gpx):
         "elevation_loss_m": round(downhill),
         "moving_time_s": moving_data.moving_time,
         "stopped_time_s": moving_data.stopped_time,
+        "moving_distance_m": round(moving_data.moving_distance, 1),
         "max_speed_kmh": round(moving_data.max_speed * 3.6, 1) if moving_data.max_speed else 0,
         "avg_speed_kmh": round(moving_data.moving_distance / moving_data.moving_time * 3.6, 1) if moving_data.moving_time > 0 else 0
     }

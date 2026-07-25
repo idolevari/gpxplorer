@@ -72,3 +72,18 @@ def test_download_returns_gpx_not_json():
     assert res.status_code == 200
     assert res.headers["content-type"].startswith("application/gpx+xml")
     assert res.text.lstrip().startswith("<?xml")
+
+
+def test_stats_expose_moving_distance():
+    """Needed so clients can compute a weighted average across trips."""
+    stats = client.get("/api/trips/dan-to-ginosar/metrics").json()["stats"]
+    assert "moving_distance_m" in stats
+    assert stats["moving_distance_m"] > 0
+    # moving distance cannot exceed total 3D distance
+    assert stats["moving_distance_m"] <= stats["distance_km"] * 1000 + 1
+
+
+def test_avg_speed_is_consistent_with_moving_distance():
+    stats = client.get("/api/trips/dan-to-ginosar/metrics").json()["stats"]
+    derived = stats["moving_distance_m"] / stats["moving_time_s"] * 3.6
+    assert derived == pytest.approx(stats["avg_speed_kmh"], abs=0.15)
