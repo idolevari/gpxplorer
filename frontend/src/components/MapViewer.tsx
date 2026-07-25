@@ -27,6 +27,7 @@ const NEON_COLORS = [
 export function MapViewer({ tripIds, hoveredPoint }: MapViewerProps) {
     const [geoJsonData, setGeoJsonData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const mapRef = useRef<MapRef>(null);
 
     useEffect(() => {
@@ -70,6 +71,7 @@ export function MapViewer({ tripIds, hoveredPoint }: MapViewerProps) {
                 };
 
                 setGeoJsonData(combinedGeoJson);
+                setLoadError(null);
 
                 // Fit bounds to all trips
                 if (allFeatures.length > 0) {
@@ -87,7 +89,8 @@ export function MapViewer({ tripIds, hoveredPoint }: MapViewerProps) {
                 }
             })
             .catch(err => {
-                console.error("Error loading trips:", err);
+                console.error('Failed to load GPX', err);
+                setLoadError("Couldn't load the route for this trip.");
             })
             .finally(() => {
                 setIsLoading(false);
@@ -107,6 +110,14 @@ export function MapViewer({ tripIds, hoveredPoint }: MapViewerProps) {
         return (
             <div className="flex items-center justify-center h-full bg-[#030712] text-[var(--text-secondary)]">
                 <p>Select trips from the sidebar to view them on the map.</p>
+            </div>
+        );
+    }
+
+    if (loadError) {
+        return (
+            <div role="alert" className="w-full h-full flex items-center justify-center text-red-300 text-sm p-6 text-center">
+                {loadError}
             </div>
         );
     }

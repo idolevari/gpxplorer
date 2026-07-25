@@ -15,6 +15,7 @@ function App() {
   const [graphData, setGraphData] = useState<ElevationPoint[] | null>(null);
   const [isMetricsLoading, setIsMetricsLoading] = useState(false);
   const [hoveredPoint, setHoveredPoint] = useState<{ lat: number, lon: number } | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Toggle trip selection
   const toggleTrip = (id: string) => {
@@ -26,15 +27,22 @@ function App() {
   // Initial Fetch of Trips
   useEffect(() => {
     fetch(`${API_URL}/api/trips`)
-      .then(res => res.json() as Promise<Trip[]>)
+      .then(res => {
+        if (!res.ok) throw new Error(`Server returned ${res.status}`);
+        return res.json() as Promise<Trip[]>;
+      })
       .then(data => {
         setTrips(data);
+        setError(null);
         if (data.length > 0) {
           // Select all trips by default
           setSelectedTrips(data.map((t: Trip) => t.id));
         }
       })
-      .catch(err => console.error("Failed to load trips", err))
+      .catch(err => {
+        console.error('Failed to load trips', err);
+        setError("Couldn't reach the trip server. Check your connection and try again.");
+      })
       .finally(() => setIsLoading(false));
   }, []);
 
@@ -60,7 +68,10 @@ function App() {
         setTripStats(aggregated?.stats ?? null);
         setGraphData(aggregated?.graph ?? null);
       })
-      .catch(err => console.error('Failed to load metrics', err))
+      .catch(err => {
+        console.error('Failed to load metrics', err);
+        setError("Couldn't load trip statistics. The map may be incomplete.");
+      })
       .finally(() => setIsMetricsLoading(false));
   }, [selectedTrips]);
 
@@ -75,6 +86,7 @@ function App() {
       isMetricsLoading={isMetricsLoading}
       hoveredPoint={hoveredPoint}
       onHoverPoint={setHoveredPoint}
+      error={error}
     >
       <MapViewer tripIds={selectedTrips} hoveredPoint={hoveredPoint} />
     </Layout>
