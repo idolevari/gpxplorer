@@ -423,7 +423,6 @@ import os
 from functools import lru_cache
 
 import gpxpy
-import gpxpy.gpx
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -460,7 +459,7 @@ def load_gpx(filename: str):
         return gpxpy.parse(f)
 ```
 
-`JSONResponse` and `math` were imported and never used; both are gone. `TRIPS_DIR` is now absolute, so the server no longer has to be started from `backend/`.
+`JSONResponse` and `math` were imported and never used; both are gone. `import gpxpy.gpx` goes too — it existed only for `gpxpy.gpx.GPX()` in the composite branches deleted in Step 4, so keeping it would leave a fresh dead import behind. `TRIPS_DIR` is now absolute, so the server no longer has to be started from `backend/`.
 
 - [ ] **Step 4: Replace both endpoint bodies**
 
@@ -1202,7 +1201,7 @@ Create `netlify.toml` at the repo root:
 [build]
   base = "web"
   command = "npm run build"
-  publish = "web/dist"
+  publish = "dist"
 
 [dev]
   command = "npm run dev"
@@ -1216,7 +1215,11 @@ Create `netlify.toml` at the repo root:
   status = 200
 ```
 
-Note `publish` is relative to the repo root, not to `base`.
+`publish` is written relative to `base`, which is how Netlify resolves it when `base` is
+set. If the deploy in Step 12 fails with a "publish directory not found" error, try
+`publish = "web/dist"` instead — Netlify's handling of this pair has changed across
+versions, and Step 12's deploy check is what settles it. Do not guess at both; change one
+value, redeploy, and record which worked.
 
 - [ ] **Step 3: Pin the Railway build in the repo**
 
