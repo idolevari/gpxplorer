@@ -230,6 +230,13 @@ def test_download_returns_gpx_not_json():
 Run: `cd backend && uv run pytest -v`
 Expected: 5 passed. These characterise existing correct behaviour — they should pass immediately. If `test_metrics_match_known_values` fails, stop: something has changed in the GPX files or gpxpy version and must be understood before proceeding.
 
+**Amended after review (commit `14e28c5`).** The test file above was strengthened before
+Task 3: mutation testing proved that swapping `length_3d()` for `length_2d()` passed this
+suite, because the two differ by only ~32 m on this route. Tightening the distance
+tolerance did **not** fix it — a dedicated `test_distance_is_3d_not_2d` guard was added
+instead, comparing the API's distance against both computed values. If you re-run this
+plan from scratch, take the test file from `14e28c5`, not from the block above.
+
 - [ ] **Step 4: Create `.github/workflows/ci.yml`**
 
 Paths here are the pre-rename ones and get updated in Task 8.
@@ -348,7 +355,7 @@ In `backend/main.py`, replace the `stats` dict at lines 83–91 with:
 - [ ] **Step 4: Run the full suite**
 
 Run: `cd backend && uv run pytest -v`
-Expected: 7 passed
+Expected: 8 passed
 
 - [ ] **Step 5: Commit**
 
@@ -491,17 +498,38 @@ Two changes worth naming. The `type: "composite"` branches are deleted — no tr
 
 Change line `async def get_trips():` to `def get_trips():`.
 
-- [ ] **Step 6: Run the full suite**
+- [ ] **Step 6: Correct the test fixture's now-stale docstring**
+
+`backend/tests/test_metrics.py` has an autouse fixture whose docstring reads
+*"main.py resolves GPX paths relative to the working directory."* After Step 3 that is
+no longer true — `TRIPS_DIR` is absolute. The fixture must **stay**, because
+`test_distance_is_3d_not_2d` opens `trips/dan_to_ginosar.gpx` relative to the working
+directory itself, but its stated reason is now wrong and would mislead the next reader.
+
+Replace the docstring only, leaving the fixture body unchanged:
+
+```python
+@pytest.fixture(autouse=True)
+def run_from_backend_dir(monkeypatch):
+    """Tests that open GPX fixtures directly use paths relative to backend/.
+
+    The application no longer depends on the working directory -- TRIPS_DIR is
+    absolute -- but the tests still read fixture files by relative path.
+    """
+```
+
+- [ ] **Step 7: Run the full suite**
 
 Run: `cd backend && uv run pytest -v`
-Expected: 11 passed
+Expected: 12 passed
 
-- [ ] **Step 7: Verify the metrics did not change**
+- [ ] **Step 8: Verify the metrics did not change**
 
-Run: `cd backend && uv run pytest tests/test_metrics.py::test_metrics_match_known_values -v`
-Expected: PASS — this is the guard that the refactor changed no numbers.
+Run: `cd backend && uv run pytest tests/test_metrics.py -k "known_values or 3d_not_2d" -v`
+Expected: both PASS — these are the guards that the refactor changed no numbers, and that
+distance is still measured in three dimensions.
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
 git add backend/main.py backend/tests/test_metrics.py
@@ -1268,7 +1296,7 @@ Push the branch and confirm a Netlify preview deploy succeeds and the Railway se
 After all eight tasks:
 
 ```bash
-cd api && uv run pytest -v          # 11 passed
+cd api && uv run pytest -v          # 12 passed
 cd ../web && npm run lint && npm test && npm run build
 ```
 
