@@ -1,0 +1,18 @@
+[project]
+name = "gpxplorer-api"
+version = "0.1.0"
+description = "GPXplorer API — GPX parsing, metrics, and AI"
+requires-python = "==3.11.*"
+dependencies = [
+    "fastapi>=0.115,<0.116",
+    "uvicorn[standard]>=0.32,<0.33",
+    "python-multipart>=0.0.12,<0.1",
+    "gpxpy>=1.6,<2.0",
+]
+
+[dependency-groups]
+dev = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
