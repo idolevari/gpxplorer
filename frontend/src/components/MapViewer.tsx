@@ -40,7 +40,10 @@ export function MapViewer({ tripIds, hoveredPoint }: MapViewerProps) {
 
         const fetchPromises = tripIds.map((id, index) =>
             fetch(`${API_URL}/api/trips/${id}/download`)
-                .then(res => res.text())
+                .then(res => {
+                    if (!res.ok) throw new Error(`Failed to load route for ${id} (${res.status})`);
+                    return res.text();
+                })
                 .then(gpxText => {
                     const parser = new DOMParser();
                     const gpx = parser.parseFromString(gpxText, "application/xml");

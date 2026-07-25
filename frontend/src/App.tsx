@@ -15,7 +15,8 @@ function App() {
   const [graphData, setGraphData] = useState<ElevationPoint[] | null>(null);
   const [isMetricsLoading, setIsMetricsLoading] = useState(false);
   const [hoveredPoint, setHoveredPoint] = useState<{ lat: number, lon: number } | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [tripsError, setTripsError] = useState<string | null>(null);
+  const [metricsError, setMetricsError] = useState<string | null>(null);
 
   // Toggle trip selection
   const toggleTrip = (id: string) => {
@@ -33,7 +34,7 @@ function App() {
       })
       .then(data => {
         setTrips(data);
-        setError(null);
+        setTripsError(null);
         if (data.length > 0) {
           // Select all trips by default
           setSelectedTrips(data.map((t: Trip) => t.id));
@@ -41,7 +42,7 @@ function App() {
       })
       .catch(err => {
         console.error('Failed to load trips', err);
-        setError("Couldn't reach the trip server. Check your connection and try again.");
+        setTripsError("Couldn't reach the trip server. Check your connection and try again.");
       })
       .finally(() => setIsLoading(false));
   }, []);
@@ -67,10 +68,11 @@ function App() {
         const aggregated = aggregateTripMetrics(results);
         setTripStats(aggregated?.stats ?? null);
         setGraphData(aggregated?.graph ?? null);
+        setMetricsError(null);
       })
       .catch(err => {
         console.error('Failed to load metrics', err);
-        setError("Couldn't load trip statistics. The map may be incomplete.");
+        setMetricsError("Couldn't load trip statistics. The map may be incomplete.");
       })
       .finally(() => setIsMetricsLoading(false));
   }, [selectedTrips]);
@@ -86,7 +88,8 @@ function App() {
       isMetricsLoading={isMetricsLoading}
       hoveredPoint={hoveredPoint}
       onHoverPoint={setHoveredPoint}
-      error={error}
+      tripsError={tripsError}
+      metricsError={metricsError}
     >
       <MapViewer tripIds={selectedTrips} hoveredPoint={hoveredPoint} />
     </Layout>

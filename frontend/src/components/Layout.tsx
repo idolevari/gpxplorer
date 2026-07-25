@@ -16,7 +16,8 @@ interface LayoutProps {
     isMetricsLoading?: boolean;
     hoveredPoint?: { lat: number, lon: number } | null;
     onHoverPoint?: (point: { lat: number, lon: number } | null) => void;
-    error?: string | null;
+    tripsError?: string | null;
+    metricsError?: string | null;
 }
 
 export function Layout({
@@ -29,7 +30,8 @@ export function Layout({
     graphData,
     isMetricsLoading,
     onHoverPoint,
-    error
+    tripsError,
+    metricsError
 }: LayoutProps) {
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = React.useState(false);
 
@@ -88,7 +90,8 @@ export function Layout({
                     isLoading={isLoadingTrips}
                     isOpen={isMobileSidebarOpen}
                     onClose={() => setIsMobileSidebarOpen(false)}
-                    error={error}
+                    tripsError={tripsError}
+                    metricsError={metricsError}
                 />
                 <main className="flex-1 relative flex flex-col">
                     <div className="flex-1 relative">
