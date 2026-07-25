@@ -2,12 +2,7 @@ import React from 'react';
 import { Map, Download } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { StatsBar } from './StatsBar';
-
-interface Trip {
-    id: string;
-    name: string;
-    description: string;
-}
+import type { AggregatedStats, ElevationPoint, Trip } from '../lib/types';
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -15,8 +10,8 @@ interface LayoutProps {
     selectedTrips: string[];
     onToggleTrip: (id: string) => void;
     isLoadingTrips: boolean;
-    stats?: any;
-    graphData?: any;
+    stats?: AggregatedStats | null;
+    graphData?: ElevationPoint[] | null;
     isMetricsLoading?: boolean;
     hoveredPoint?: { lat: number, lon: number } | null;
     onHoverPoint?: (point: { lat: number, lon: number } | null) => void;

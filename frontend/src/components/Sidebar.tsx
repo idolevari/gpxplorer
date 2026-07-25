@@ -1,11 +1,5 @@
 
-
-
-interface Trip {
-    id: string;
-    name: string;
-    description: string;
-}
+import type { Trip } from '../lib/types';
 
 interface SidebarProps {
     trips: Trip[];
