@@ -11,7 +11,11 @@ client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def run_from_backend_dir(monkeypatch):
-    """main.py resolves GPX paths relative to the working directory."""
+    """Tests that open GPX fixtures directly use paths relative to backend/.
+
+    The application no longer depends on the working directory -- TRIPS_DIR is
+    absolute -- but the tests still read fixture files by relative path.
+    """
     monkeypatch.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
@@ -89,3 +93,26 @@ def test_avg_speed_is_consistent_with_moving_distance():
     stats = client.get("/api/trips/dan-to-ginosar/metrics").json()["stats"]
     derived = stats["moving_distance_m"] / stats["moving_time_s"] * 3.6
     assert derived == pytest.approx(stats["avg_speed_kmh"], abs=0.15)
+
+
+def test_cors_rejects_unknown_origin():
+    res = client.get("/api/trips", headers={"Origin": "https://evil.example"})
+    assert res.headers.get("access-control-allow-origin") != "*"
+    assert res.headers.get("access-control-allow-origin") != "https://evil.example"
+
+
+def test_cors_allows_configured_origin():
+    res = client.get("/api/trips", headers={"Origin": "http://localhost:5173"})
+    assert res.headers.get("access-control-allow-origin") == "http://localhost:5173"
+
+
+def test_gpx_parsing_is_cached():
+    """Second read of the same file must not re-parse from disk."""
+    main.load_gpx.cache_clear()
+    client.get("/api/trips/dan-to-ginosar/metrics")
+    client.get("/api/trips/dan-to-ginosar/metrics")
+    assert main.load_gpx.cache_info().hits >= 1
+
+
+def test_no_composite_trips_remain():
+    assert all(t["type"] == "single" for t in main.TRIPS.values())
