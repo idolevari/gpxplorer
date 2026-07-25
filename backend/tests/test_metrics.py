@@ -1,9 +1,10 @@
 import os
+import gpxpy
 import pytest
 from fastapi.testclient import TestClient
 
 import main
-from main import app, calculate_stats
+from main import app
 
 client = TestClient(app)
 
@@ -34,9 +35,27 @@ def test_metrics_match_known_values():
     res = client.get("/api/trips/dan-to-ginosar/metrics")
     assert res.status_code == 200
     stats = res.json()["stats"]
-    assert stats["distance_km"] == pytest.approx(65.0, abs=0.5)
+    assert stats["distance_km"] == pytest.approx(64.97, abs=0.05)
     assert stats["elevation_gain_m"] == pytest.approx(547, abs=5)
     assert stats["elevation_loss_m"] == pytest.approx(892, abs=5)
+
+
+def test_distance_is_3d_not_2d():
+    """Guards the length_3d/length_2d choice, which a tolerance cannot.
+
+    Tasks that touch calculate_stats could silently swap these; on this route
+    they differ by only ~32 m, well inside any sane distance tolerance.
+    """
+    with open("trips/dan_to_ginosar.gpx") as f:
+        gpx = gpxpy.parse(f)
+
+    three_d = gpx.length_3d() / 1000
+    two_d = gpx.length_2d() / 1000
+    assert three_d > two_d, "fixture assumption: this route has elevation change"
+
+    stats = client.get("/api/trips/dan-to-ginosar/metrics").json()["stats"]
+    assert stats["distance_km"] == pytest.approx(three_d, abs=0.01)
+    assert stats["distance_km"] != pytest.approx(two_d, abs=0.01)
 
 
 def test_graph_is_downsampled_and_ordered():
