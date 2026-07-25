@@ -93,10 +93,15 @@ build context, and excluding it makes `docker build` fail with
 
 Two fixes beyond uv: the old `CMD` hardcoded `--port 8000` and ignored Railway's injected `$PORT`, and the exec form could not expand it. Shell form fixes that and makes `Procfile` redundant.
 
+The uv image tag is pinned deliberately. `:latest` would leave the tool that resolves
+every other pinned dependency floating, so two builds weeks apart could silently use
+different resolvers — a Railway deploy could start failing with nothing in this repo's
+history to explain why.
+
 ```dockerfile
 FROM python:3.11-slim
 
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.9.22 /uv /uvx /bin/
 
 WORKDIR /app
 
