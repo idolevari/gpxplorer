@@ -83,8 +83,11 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 tests/
-.python-version
 ```
+
+`.python-version` must **not** be listed here — Step 6's Dockerfile copies it into the
+build context, and excluding it makes `docker build` fail with
+`"/.python-version": not found`.
 
 - [ ] **Step 6: Rewrite `backend/Dockerfile`**
 
