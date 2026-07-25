@@ -79,6 +79,8 @@ def test_stats_expose_moving_distance():
     stats = client.get("/api/trips/dan-to-ginosar/metrics").json()["stats"]
     assert "moving_distance_m" in stats
     assert stats["moving_distance_m"] > 0
+    # A ~65 km trip: a value in kilometres rather than metres would fail here.
+    assert stats["moving_distance_m"] > 1000
     # moving distance cannot exceed total 3D distance
     assert stats["moving_distance_m"] <= stats["distance_km"] * 1000 + 1
 
