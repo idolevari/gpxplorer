@@ -166,10 +166,15 @@ UI and the AI's place vocabulary. `id`, `trip_id`, `day_id`, `name`, `kind`, `la
 `updated_at`. Regenerated only when `content_hash` changes, to avoid re-embedding on
 every save.
 
-**`chat_sessions`** / **`chat_messages`** — conversation history. Sessions carry a
-nullable `user_id` (anonymous readers get a session too) and a nullable `trip_id`
+**`chat_sessions`** / **`chat_messages`** — conversation history *for the UI*. Sessions
+carry a nullable `user_id` (anonymous readers get a session too) and a nullable `trip_id`
 (Explore conversations are trip-less). Messages store `role`, `content`, and
-`tool_calls` (jsonb) so the trace in the UI survives a page reload.
+`tool_calls` (jsonb) so the trace survives a page reload.
+
+These are **not** the agent's own state. LangGraph's checkpointer (§8.0) persists graph
+state in its own tables against the same Postgres. Do not duplicate: the checkpointer owns
+resumable agent state, these tables own what the interface renders and what answer caching
+(§8.4) keys on. Confirm the boundary once the checkpointer schema is in place.
 
 ### Derived, never stored
 
@@ -314,8 +319,31 @@ campervan trip does not want speed or climbing anyway.
 
 ## 8. AI features
 
-Built with **LangChain (Python)** inside FastAPI. This project is explicitly also a
-vehicle for learning LangChain, so the feature order below doubles as a learning path.
+Built in Python inside FastAPI. This project is explicitly also a vehicle for learning
+the LangChain ecosystem, so the feature order below doubles as a learning path.
+
+### 8.0 LangGraph for the agent, plain LCEL for the chains
+
+**The chat agent is built with LangGraph; §8.2 and §8.3 are not.**
+
+The reason is *not* that trip chat is complex — it is a single agent with a handful of
+read-only tools. The reasons are:
+
+1. **`AgentExecutor` is the legacy path.** LangChain steers agentic workloads to
+   LangGraph, and `create_react_agent` is the idiomatic way to build a tool-calling agent.
+   Learning `AgentExecutor` in 2026 means learning a deprecated API.
+2. **Checkpointing gives conversation persistence for free**, against the Postgres
+   instance Supabase already provides.
+3. **Streaming of intermediate steps** is what the visible tool trace (§9) needs — the UI
+   wants to show `find_short_days(…)` as it runs, not after the answer lands.
+4. **Interrupts / human-in-the-loop** map directly onto §8.2, where the model drafts
+   metadata and a human approves it before publish.
+
+§8.2 (auto-metadata) is prompt → model → Pydantic parser, and §8.3 (search) is a
+retrieval chain. Both are straight LCEL. Reaching for a graph there would be ceremony.
+
+*Verify against current LangGraph docs at implementation time — this ecosystem moves
+faster than this document will.*
 
 ### 8.1 Chat with a trip — tool calling, *not* RAG
 
@@ -337,10 +365,11 @@ get_places_crossed(day_index?)         highlight_segment(day_index)   # UI side-
 `highlight_segment` is a tool with a **UI side-effect**: calling it draws the segment on
 the map, which is how the answer and the annotation stay in sync (§9).
 
-Tools are typed with Pydantic schemas so LangChain can validate arguments and the model
-retries on mismatch.
+Tools are typed with Pydantic schemas so arguments are validated and the model retries on
+mismatch.
 
-**Concepts learned:** tools, agents, `AgentExecutor`, conversation memory, streaming.
+**Concepts learned:** tool definition and binding, graph state, `create_react_agent`,
+checkpointers and thread persistence, streaming intermediate steps, and interrupts.
 
 ### 8.2 Auto-metadata and route enrichment
 
@@ -444,11 +473,30 @@ codebase reads. It is retained because §8 will use it. Local Python is 3.14.2 w
 
 - **uv** replaces pip. `pyproject.toml` + `uv.lock` replace `requirements.txt`; one
   Dockerfile line changes. Fixes both unpinned dependencies and the Python version drift.
-- **`frontend/` → `app/`**, paired with **`backend/` → `api/`**. The rename only buys
-  clarity if both halves are named by role; `app/` next to `backend/` would be worse than
-  today. Requires updating `netlify.toml`'s base directory and Railway's root path.
-  *(Note: a previous attempt at a `services/web` restructure was reverted on 2026-07-25;
-  the deploy-config coupling above is the likely reason and must be handled explicitly.)*
+- **`frontend/` → `web/`**, paired with **`backend/` → `api/`**. The rename only buys
+  clarity if both halves are named by role.
+
+  `app/` was considered and rejected: it collides with Next.js's App Router directory and
+  with the Rails/Laravel source convention, so a future Next migration (§11) would produce
+  `app/app/page.tsx`.
+
+  `web/` draws the useful distinction — *web application* rather than *native
+  application* — leaving room for a `mobile/` sibling later. That is not hypothetical for
+  this product: camera-roll access for bulk photo import and background GPS tracking are
+  exactly what would make trip creation better than uploading files from a laptop.
+  `web/` covers desktop and mobile browsers alike; the app is already responsive
+  (commit `9a05f5e`, `md:` breakpoint drawer).
+
+  ```
+  web/      browsers, desktop and mobile
+  api/      FastAPI + LangGraph
+  mobile/   native, if it ever happens
+  ```
+
+  Requires updating `netlify.toml`'s base directory and Railway's root path in the same
+  commit. *(A previous attempt at a `services/web` restructure was reverted on
+  2026-07-25; this deploy-config coupling is the likely cause and must be verified
+  against a real deploy before anything is built on top.)*
 - **Tests:** pytest for the backend (metric computation is pure and highly testable),
   Vitest for the frontend. **The weighted-average bug gets a regression test first.**
 - **CI:** GitHub Actions running lint, typecheck, build and tests on every PR.
