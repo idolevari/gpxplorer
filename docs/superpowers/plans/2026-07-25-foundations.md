@@ -1165,6 +1165,122 @@ below md, removing it from the accessibility tree on mobile."
 
 ---
 
+### Task 7b: Get CI actually green
+
+**Files:**
+- Modify: `frontend/src/App.tsx`, `frontend/src/components/MapViewer.tsx`, `frontend/src/components/StatsBar.tsx`
+
+**Interfaces:**
+- Consumes: `AggregatedStats`, `ElevationPoint`, `Trip` from `src/lib/types.ts` (Task 5)
+- Produces: a passing `npm run lint`, which unblocks every CI step after it
+
+**Why this exists:** Task 2 added `npm run lint` to CI without first checking it could pass.
+It could not — `main` had **15 lint errors** before any of this work began. GitHub Actions
+stops a job at its first failing step, so `npm test` and `npm run build` have **never run
+in CI**. The frontend has had no effective CI since the day it was added. Task 5's typing
+work cleared six errors; these are the remaining nine.
+
+This runs before the rename so that the rename has a green baseline. If CI is already red,
+a red CI after the rename tells you nothing.
+
+- [ ] **Step 1: Confirm the starting state**
+
+Run: `cd frontend && npx eslint . --format json | python3 -c "import json,sys; print(sum(len(f['messages']) for f in json.load(sys.stdin)))"`
+Expected: `9`
+
+- [ ] **Step 2: Replace both `@ts-ignore` comments**
+
+`MapViewer.tsx:5` and `MapViewer.tsx:76`. `@ts-expect-error` fails loudly if the error it
+suppresses ever goes away, whereas `@ts-ignore` silently rots. Keep the explanatory text.
+
+```tsx
+// @ts-expect-error - togeojson has no bundled type declarations
+```
+
+```tsx
+// @ts-expect-error - @turf/bbox's tuple return is wider than fitBounds accepts
+```
+
+- [ ] **Step 3: Type the GeoJSON state and callbacks**
+
+`MapViewer.tsx:28`, `:51`, `:66` are `any`. Import the real types — `geojson` types ship
+with `mapbox-gl`, so no new dependency should be needed:
+
+```tsx
+import type { Feature, FeatureCollection } from 'geojson';
+```
+
+Type the state as `useState<FeatureCollection | null>(null)` and the feature callbacks as
+`(f: Feature)`. If `geojson` types are genuinely absent, run
+`npm install -D @types/geojson` and say so in your report rather than falling back to `any`.
+
+- [ ] **Step 4: Type the Recharts tooltip**
+
+`StatsBar.tsx:12` and `:119` are `any` on `CustomTooltip`. Recharts 3 ships its own types:
+
+```tsx
+import type { TooltipContentProps } from 'recharts';
+```
+
+If that exact name is not exported by the installed version, define a narrow local
+interface describing only the fields actually read (`active`, `label`, and
+`payload[0].value` / `payload[0].payload`) rather than reaching for `any`.
+
+- [ ] **Step 5: Fix `set-state-in-effect` by deriving, not by disabling**
+
+`App.tsx:45` and `MapViewer.tsx:34` both call `setState` synchronously inside an effect
+body to clear stale data when the selection empties. React flags this because it causes a
+cascading re-render. The fix is to stop **storing** a value that can be **computed**.
+
+In `App.tsx`, delete the `setTripStats(null); setGraphData(null);` lines from the effect's
+early return, leave the bare `return;`, and derive at the point of use:
+
+```tsx
+  const hasSelection = selectedTrips.length > 0;
+  const visibleStats = hasSelection ? tripStats : null;
+  const visibleGraph = hasSelection ? graphData : null;
+```
+
+Pass `visibleStats` and `visibleGraph` to `<Layout>` in place of the raw state.
+
+Apply the same shape in `MapViewer.tsx`: drop `setGeoJsonData(null)` from the early
+return and derive `const visibleGeoJson = tripIds.length === 0 ? null : geoJsonData;`,
+using that wherever `geoJsonData` is currently read in the render.
+
+**Do not silence either rule with `eslint-disable`.** If derivation turns out not to work
+for one of these, stop and report rather than suppressing — a disabled rule here would
+hide exactly the cascading-render problem the rule exists to catch.
+
+- [ ] **Step 6: Verify the whole CI chain locally, in CI's order**
+
+Run: `cd frontend && npm run lint && npm test && npm run build`
+Expected: lint clean with no output, 6 tests passed, build succeeds. This is the first
+time all three have run in sequence successfully.
+
+- [ ] **Step 7: Confirm no behaviour changed**
+
+Run: `cd frontend && npx tsc -p tsconfig.app.json --noEmit`
+Expected: no output. The derivation in Step 5 must not change what renders — an empty
+selection still shows no stats and no route, it is simply computed rather than stored.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add frontend/src
+git commit -m "fix(web): clear the lint errors blocking every CI step
+
+CI ran npm run lint first and it had never passed -- main carried 15
+errors before this branch. Actions stops at the first failing step, so
+npm test and npm run build never executed. The frontend has had no
+effective CI since it was added.
+
+Replaces two @ts-ignore with @ts-expect-error, types the GeoJSON state
+and the Recharts tooltip, and fixes both set-state-in-effect warnings by
+deriving the cleared value instead of storing it."
+```
+
+---
+
 ### Task 8: Rename to `web/` and `api/`
 
 **Files:**
