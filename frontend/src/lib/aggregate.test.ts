@@ -63,4 +63,31 @@ describe('aggregateTripMetrics', () => {
     const graph = aggregateTripMetrics([a, b])!.graph;
     expect(graph.map(p => p.distance)).toEqual([0, 10, 10, 15]);
   });
+
+  it('uses moving distance, not total distance, for the average', () => {
+    // 100 km covered, but only 50 km of it while actually moving, over one hour.
+    const base = trip(100, 3600);
+    const t: TripMetrics = {
+      ...base,
+      stats: { ...base.stats, moving_distance_m: 50_000 },
+    };
+    const result = aggregateTripMetrics([t]);
+    // 50000 m / 3600 s = 13.89 m/s = 50 km/h
+    expect(result!.stats.avg_speed_kmh).toBeCloseTo(50, 1);
+    // 100 would mean it used distance_km instead of moving_distance_m
+    expect(result!.stats.avg_speed_kmh).not.toBeCloseTo(100, 0);
+  });
+
+  it('takes the maximum of max speed, never the sum', () => {
+    const a = trip(10, 3600); a.stats.max_speed_kmh = 42;
+    const b = trip(10, 3600); b.stats.max_speed_kmh = 31;
+    const result = aggregateTripMetrics([a, b]);
+    expect(result!.stats.max_speed_kmh).toBe(42);
+    expect(result!.stats.max_speed_kmh).not.toBe(73);
+  });
+
+  it('sums stopped time across trips', () => {
+    const result = aggregateTripMetrics([trip(10, 3600), trip(10, 3600)]);
+    expect(result!.stats.stopped_time_s).toBe(120);
+  });
 });
