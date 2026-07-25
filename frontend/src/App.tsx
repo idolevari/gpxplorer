@@ -4,8 +4,7 @@ import { Layout } from './components/Layout';
 import { MapViewer } from './components/MapViewer';
 import { aggregateTripMetrics } from './lib/aggregate';
 import type { AggregatedStats, ElevationPoint, TripMetrics, Trip } from './lib/types';
-
-const API_URL = import.meta.env.DEV ? 'http://localhost:8000' : 'https://gpxplorer-production.up.railway.app';
+import { API_URL } from './lib/config';
 
 function App() {
   const [trips, setTrips] = useState<Trip[]>([]);

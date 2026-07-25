@@ -5,9 +5,9 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 // @ts-ignore
 import * as togeojson from 'togeojson';
 import bbox from '@turf/bbox';
+import { API_URL } from '../lib/config';
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
-const API_URL = import.meta.env.DEV ? 'http://localhost:8000' : 'https://gpxplorer-production.up.railway.app';
 
 interface MapViewerProps {
     tripIds: string[];

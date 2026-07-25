@@ -3,6 +3,7 @@ import { Map, Download } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { StatsBar } from './StatsBar';
 import type { AggregatedStats, ElevationPoint, Trip } from '../lib/types';
+import { API_URL } from '../lib/config';
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -61,7 +62,6 @@ export function Layout({
                         onClick={() => {
                             const lastSelected = selectedTrips.length > 0 ? selectedTrips[selectedTrips.length - 1] : null;
                             if (lastSelected) {
-                                const API_URL = import.meta.env.DEV ? 'http://localhost:8000' : 'https://gpxplorer-production.up.railway.app';
                                 window.open(`${API_URL}/api/trips/${lastSelected}/download`, '_blank');
                             }
                         }}
