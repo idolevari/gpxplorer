@@ -13,7 +13,9 @@ function App() {
 
   const [tripStats, setTripStats] = useState<AggregatedStats | null>(null);
   const [graphData, setGraphData] = useState<ElevationPoint[] | null>(null);
-  const [isMetricsLoading, setIsMetricsLoading] = useState(false);
+  // Tracks the selection the last metrics fetch settled for, so "loading"
+  // can be derived instead of stored (see visibleStats/visibleGraph below).
+  const [settledSelection, setSettledSelection] = useState<string[]>(selectedTrips);
   const [hoveredPoint, setHoveredPoint] = useState<{ lat: number, lon: number } | null>(null);
   const [tripsError, setTripsError] = useState<string | null>(null);
   const [metricsError, setMetricsError] = useState<string | null>(null);
@@ -47,15 +49,18 @@ function App() {
       .finally(() => setIsLoading(false));
   }, []);
 
+  const hasSelection = selectedTrips.length > 0;
+  const visibleStats = hasSelection ? tripStats : null;
+  const visibleGraph = hasSelection ? graphData : null;
+  const visibleMetricsError = hasSelection ? metricsError : null;
+  const isMetricsLoading = hasSelection && settledSelection !== selectedTrips;
+
   // Fetch metrics for all selected trips and aggregate them
   useEffect(() => {
     if (selectedTrips.length === 0) {
-      setTripStats(null);
-      setGraphData(null);
       return;
     }
 
-    setIsMetricsLoading(true);
     Promise.all(
       selectedTrips.map(id =>
         fetch(`${API_URL}/api/trips/${id}/metrics`).then(res => {
@@ -74,7 +79,7 @@ function App() {
         console.error('Failed to load metrics', err);
         setMetricsError("Couldn't load trip statistics. The map may be incomplete.");
       })
-      .finally(() => setIsMetricsLoading(false));
+      .finally(() => setSettledSelection(selectedTrips));
   }, [selectedTrips]);
 
   return (
@@ -83,13 +88,13 @@ function App() {
       selectedTrips={selectedTrips}
       onToggleTrip={toggleTrip}
       isLoadingTrips={isLoading}
-      stats={tripStats}
-      graphData={graphData}
+      stats={visibleStats}
+      graphData={visibleGraph}
       isMetricsLoading={isMetricsLoading}
       hoveredPoint={hoveredPoint}
       onHoverPoint={setHoveredPoint}
       tripsError={tripsError}
-      metricsError={metricsError}
+      metricsError={visibleMetricsError}
     >
       <MapViewer tripIds={selectedTrips} hoveredPoint={hoveredPoint} />
     </Layout>
