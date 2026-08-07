@@ -48,6 +48,10 @@ body {
 .hairline-t { border-top: 1px solid var(--hair); }
 .hairline-b { border-bottom: 1px solid var(--hair); }
 
+@media (min-width: 1024px) {
+  .lg\:hairline-r { border-right: 1px solid var(--hair); }
+}
+
 ::selection {
   background: var(--amber);
   color: var(--amber-ink);

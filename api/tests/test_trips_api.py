@@ -165,6 +165,7 @@ def install_trip(fake, visibility, token=None):
 def url_client(monkeypatch):
     monkeypatch.setenv("SUPABASE_JWT_SECRET", TEST_SECRET)
     fake = FakeSupabase()
+    fake.none_on_empty = False  # Flag to control zero-rows behavior
 
     class Q:
         def __init__(self, name):
@@ -174,6 +175,9 @@ def url_client(monkeypatch):
         def maybe_single(self): return self
         def execute(self):
             data = fake.trip if self.name == "trips" else fake.day
+            # Mirror real supabase-py: return None when data is None and flag is set
+            if data is None and fake.none_on_empty:
+                return None
             return type("R", (), {"data": data})()
 
     fake.table = lambda name: Q(name)
@@ -221,3 +225,20 @@ def test_unlisted_needs_the_right_token(url_client):
     assert client.get(BASE).status_code == 404
     assert client.get(BASE + "?token=wrong").status_code == 404
     assert client.get(BASE + "?token=" + "cafe" * 8).status_code == 200
+
+
+def test_nonexistent_trip_is_404_not_500(url_client):
+    client, fake = url_client
+    fake.trip = None
+    fake.day = None
+    fake.none_on_empty = True
+    assert client.get(BASE).status_code == 404
+
+
+def test_nonexistent_day_is_404_not_500(url_client):
+    client, fake = url_client
+    install_trip(fake, "public")
+    fake.day = None
+    fake.none_on_empty = True
+    res = client.get(BASE)
+    assert res.status_code == 404

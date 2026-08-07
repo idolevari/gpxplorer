@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { tripTotals } from './trips';
+import { rotateShareToken, setTripVisibility, tripTotals } from './trips';
 import type { TripDayRow } from './db-types';
 
 function day(over: Partial<TripDayRow>): TripDayRow {
@@ -47,5 +47,14 @@ describe('tripTotals', () => {
       day({}),
     ]);
     expect(totals.max_elevation_m).toBe(803);
+  });
+});
+
+describe('sharing mutations', () => {
+  it('exposes the expected signatures', () => {
+    expect(typeof setTripVisibility).toBe('function');
+    expect(setTripVisibility.length).toBe(2);
+    expect(typeof rotateShareToken).toBe('function');
+    expect(rotateShareToken.length).toBe(1);
   });
 });

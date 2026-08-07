@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { TripDayRow, TripRow } from './db-types';
+import type { TripDayRow, TripRow, Visibility } from './db-types';
 
 export async function listPublicTrips(): Promise<TripRow[]> {
   const { data, error } = await supabase
@@ -45,6 +45,19 @@ export async function getTripByShareToken(
     'get_trip_days_by_share_token', { token });
   if (dayErr) throw new Error(dayErr.message);
   return { trip, days: (days ?? []) as TripDayRow[] };
+}
+
+export async function setTripVisibility(id: string, visibility: Visibility): Promise<TripRow> {
+  const { data, error } = await supabase
+    .from('trips').update({ visibility }).eq('id', id).select().single();
+  if (error) throw new Error(error.message);
+  return data as TripRow;
+}
+
+export async function rotateShareToken(id: string): Promise<string> {
+  const { data, error } = await supabase.rpc('rotate_share_token', { trip: id });
+  if (error) throw new Error(error.message);
+  return data as string;
 }
 
 export interface TripTotals {
