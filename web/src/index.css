@@ -1,34 +1,63 @@
 @import "tailwindcss";
 
 :root {
-  --bg-primary: #030712; /* Very dark slate/black */
-  --bg-secondary: #0f172a; /* Dark slate */
-  --accent-primary: #3b82f6; /* Blue 500 */
-  --accent-glow: #60a5fa; /* Blue 400 */
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-bg: rgba(15, 23, 42, 0.6);
+  --ink:    #090d0c;
+  --ink-2:  #0d1312;
+  --raise:  #111917;
+  --bone:   #e6e0d2;
+  --dim:    #7f857e;
+  --faint:  rgba(230, 224, 210, 0.34);
+  --hair:   rgba(230, 224, 210, 0.14);
+  --hair-2: rgba(230, 224, 210, 0.07);
+  --amber:  #d4a04a;
+  --amber-ink: #100c06;
+  --red:    #c94f32;
+
+  --f-display: "Didot", "Bodoni 72", "Hoefler Text", Georgia, serif;
+  --f-mono: ui-monospace, Menlo, "SF Mono", "Roboto Mono", monospace;
+}
+
+html, body, #root {
+  height: 100%;
 }
 
 body {
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  overflow: hidden;
+  margin: 0;
+  background: var(--ink);
+  color: var(--bone);
+  font-family: var(--f-mono);
+  font-size: 13px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
+.font-display {
+  font-family: var(--f-display);
+  font-weight: 400;
 }
-::-webkit-scrollbar-track {
-  background: transparent;
+
+/* Letterspaced uppercase micro-label — the survey sheet's marginalia voice. */
+.eyebrow {
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--faint);
 }
-::-webkit-scrollbar-thumb {
-  background: var(--glass-border);
-  border-radius: 3px;
+
+.hairline-t { border-top: 1px solid var(--hair); }
+.hairline-b { border-bottom: 1px solid var(--hair); }
+
+::selection {
+  background: var(--amber);
+  color: var(--amber-ink);
 }
-::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-primary);
+
+*:focus-visible {
+  outline: 1px solid var(--bone);
+  outline-offset: 3px;
 }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: var(--hair); }
+::-webkit-scrollbar-track { background: transparent; }
