@@ -38,9 +38,16 @@ export function Explore() {
               to={`/trip/${t.id}`}
               className="flex items-baseline gap-6 px-6 py-5 group flex-wrap"
             >
-              <span className="font-display text-xl group-hover:text-[var(--coral-deep)]">
-                {t.title}
-              </span>
+              <div className="flex flex-col gap-1">
+                <span className="font-display text-xl group-hover:text-[var(--coral-deep)]">
+                  {t.title}
+                </span>
+                {t.profiles && (
+                  <span className="text-[var(--dim)] text-sm">
+                    by {t.profiles.display_name ?? t.profiles.handle}
+                  </span>
+                )}
+              </div>
               <span className="eyebrow">{activityLabel(t.activity_type)}</span>
               {t.start_date && (
                 <span className="eyebrow ml-auto">

@@ -91,6 +91,7 @@ export function Trip({ mode }: { mode: 'id' | 'token' }) {
             {activityLabel(trip.activity_type)}
             {trip.fidelity === 'reconstructed' && ' · reconstructed'}
             {mode === 'token' && ' · shared link'}
+            {trip.profiles && ` · by ${trip.profiles.display_name ?? trip.profiles.handle}`}
           </p>
           <h1 className="font-display text-4xl leading-tight mb-2">{trip.title}</h1>
           {trip.description && (

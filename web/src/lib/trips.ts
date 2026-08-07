@@ -1,9 +1,11 @@
 import { supabase } from './supabase';
 import type { TripDayRow, TripRow, Visibility } from './db-types';
 
+export const TRIP_SELECT = '*, profiles(handle, display_name)';
+
 export async function listPublicTrips(): Promise<TripRow[]> {
   const { data, error } = await supabase
-    .from('trips').select('*')
+    .from('trips').select(TRIP_SELECT)
     .eq('visibility', 'public')
     .order('start_date', { ascending: false });
   if (error) throw new Error(error.message);
@@ -25,7 +27,7 @@ export async function getTripWithDays(
   id: string,
 ): Promise<{ trip: TripRow; days: TripDayRow[] } | null> {
   const { data: trip, error } = await supabase
-    .from('trips').select('*').eq('id', id).maybeSingle();
+    .from('trips').select(TRIP_SELECT).eq('id', id).maybeSingle();
   if (error) throw new Error(error.message);
   if (!trip) return null;
   const { data: days, error: dayErr } = await supabase

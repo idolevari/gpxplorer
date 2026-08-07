@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { rotateShareToken, setTripVisibility, tripTotals } from './trips';
+import { TRIP_SELECT, rotateShareToken, setTripVisibility, tripTotals } from './trips';
 import type { TripDayRow } from './db-types';
 
 function day(over: Partial<TripDayRow>): TripDayRow {
@@ -56,5 +56,11 @@ describe('sharing mutations', () => {
     expect(setTripVisibility.length).toBe(2);
     expect(typeof rotateShareToken).toBe('function');
     expect(rotateShareToken.length).toBe(1);
+  });
+});
+
+describe('trip queries', () => {
+  it('TRIP_SELECT embeds the profiles relation', () => {
+    expect(TRIP_SELECT).toContain('profiles(handle, display_name)');
   });
 });

@@ -3,6 +3,11 @@ export type ActivityType =
 export type Visibility = 'private' | 'unlisted' | 'public';
 export type Fidelity = 'recorded' | 'reconstructed' | 'hybrid';
 
+export interface ProfileRef {
+  handle: string;
+  display_name: string | null;
+}
+
 export interface TripRow {
   id: string;
   owner_id: string;
@@ -18,6 +23,7 @@ export interface TripRow {
   created_at: string;
   updated_at: string;
   published_at: string | null;
+  profiles?: ProfileRef | null;
 }
 
 export interface TripDayRow {
