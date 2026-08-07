@@ -1,0 +1,37 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <list>
+          <option value="fastapi" />
+          <option value="openai" />
+          <option value="anthropic" />
+          <option value="jsonschema" />
+          <option value="uvicorn" />
+          <option value="psycopg2-binary" />
+          <option value="SQLAlchemy" />
+          <option value="boto3" />
+          <option value="requests" />
+          <option value="filetype" />
+          <option value="sentry-sdk" />
+          <option value="alembic" />
+          <option value="the-retry" />
+          <option value="pytest-mock" />
+          <option value="pytest-asyncio" />
+          <option value="asyncpg" />
+          <option value="numpy" />
+          <option value="gunicorn" />
+          <option value="google-genai" />
+          <option value="google-cloud-firestore" />
+          <option value="slack-sdk" />
+          <option value="sendgrid" />
+          <option value="redis" />
+          <option value="pillow" />
+          <option value="pyaml" />
+          <option value="PyPDF2" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
