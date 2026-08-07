@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../lib/auth-context';
 import { ContourField } from '../components/ContourField';
+import { useReveal } from '../lib/use-reveal';
 
 export function Landing() {
   const { user } = useAuth();
+  const { ref: statsRef, visible: statsVisible } = useReveal<HTMLDListElement>();
   return (
     <div className="relative min-h-full overflow-hidden">
       <ContourField />
@@ -36,7 +38,10 @@ export function Landing() {
           </Link>
         </div>
 
-        <dl className="mt-24 grid grid-cols-3 gap-6 text-left max-w-xl mx-auto hairline-t pt-8">
+        <dl
+          ref={statsRef}
+          className={`reveal ${statsVisible ? 'reveal-visible' : ''} mt-24 grid grid-cols-3 gap-6 text-left max-w-xl mx-auto hairline-t pt-8`}
+        >
           <div>
             <dt className="eyebrow mb-1">Cycling</dt>
             <dd className="m-0 text-[var(--dim)]">Climb, moving time, honest averages</dd>

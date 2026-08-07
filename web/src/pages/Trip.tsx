@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import type { TripDayRow, TripRow } from '../lib/db-types';
 import { formatDuration, formatKm, formatMetres } from '../lib/format';
@@ -21,6 +21,8 @@ export function Trip({ mode }: { mode: 'id' | 'token' }) {
   const [error, setError] = useState<string | null>(null);
   const [hovered, setHovered] = useState<ProfilePoint | null>(null);
   const [session, setSession] = useState<{ access_token: string } | null>(null);
+  const [activeDay, setActiveDay] = useState<number | null>(null);
+  const dayRowRefs = useRef<Map<number, HTMLLIElement>>(new Map());
 
   useEffect(() => {
     void import('../lib/supabase').then(({ supabase }) =>
@@ -41,6 +43,25 @@ export function Trip({ mode }: { mode: 'id' | 'token' }) {
     () => (data !== 'loading' && data ? geomToProfile(data.days) : []),
     [data],
   );
+  const days = useMemo(() => (data !== 'loading' && data ? data.days : []), [data]);
+
+  // Day-sync: whichever day row crosses the vertical centre of the list
+  // becomes `activeDay`, so scrolling the list (mobile) drives the map
+  // highlight. Hovering a row (desktop) sets it directly, below. This is
+  // state, not motion — it applies the same under reduced motion.
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const hit = entries.find((e) => e.isIntersecting);
+        if (!hit) return;
+        const day = Number(hit.target.getAttribute('data-day-index'));
+        setActiveDay(day);
+      },
+      { rootMargin: '-50% 0px -50% 0px', threshold: 0 },
+    );
+    dayRowRefs.current.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [days]);
 
   if (error) {
     return <p role="alert" className="p-10 text-[var(--coral-deep)]">Couldn't load this trip: {error}</p>;
@@ -59,7 +80,7 @@ export function Trip({ mode }: { mode: 'id' | 'token' }) {
     );
   }
 
-  const { trip, days } = data;
+  const { trip } = data;
   const totals = tripTotals(days);
   const isOwner = user != null && user.id === trip.owner_id;
 
@@ -119,7 +140,17 @@ export function Trip({ mode }: { mode: 'id' | 'token' }) {
           <p className="eyebrow hairline-t pt-4 mb-3">Days</p>
           <ol className="list-none m-0 p-0">
             {days.map((d) => (
-              <li key={d.id} className="hairline-t flex items-baseline gap-3 py-3">
+              <li
+                key={d.id}
+                ref={(el) => {
+                  if (el) dayRowRefs.current.set(d.day_index, el);
+                  else dayRowRefs.current.delete(d.day_index);
+                }}
+                data-day-index={d.day_index}
+                onMouseEnter={() => setActiveDay(d.day_index)}
+                onMouseLeave={() => setActiveDay(null)}
+                className="hairline-t flex items-baseline gap-3 py-3"
+              >
                 <span className="eyebrow w-8 shrink-0">{String(d.day_index).padStart(2, '0')}</span>
                 <span className="min-w-0 flex-1 truncate">
                   {d.title ?? d.date ?? `Day ${d.day_index}`}
@@ -143,6 +174,13 @@ export function Trip({ mode }: { mode: 'id' | 'token' }) {
               </li>
             ))}
           </ol>
+          {/* Scroll headroom (mobile only): the day-sync observer needs to be
+              able to pull the last row up to the viewport's vertical centre.
+              Without this, the document runs out of scrollable range before
+              a short day list's tail ever crosses that line, and those days
+              never highlight on the map. lg+ uses the sheet's own scroll
+              container and desktop hover, so it doesn't need the spacer. */}
+          <div aria-hidden="true" className="h-[45vh] lg:hidden" />
         </div>
       </div>
 
@@ -153,7 +191,7 @@ export function Trip({ mode }: { mode: 'id' | 'token' }) {
           height row) — Mapbox's height:100% needs it (plan bug #9). */}
       <div className="order-2 lg:order-none flex-1 flex flex-col min-w-0 lg:min-h-0">
         <div className="h-[45vh] shrink-0 lg:h-auto lg:flex-1 lg:min-h-0">
-          <TripMap days={days} hovered={hovered} />
+          <TripMap days={days} hovered={hovered} highlightDay={activeDay} />
         </div>
         <div className="hairline-t shrink-0">
           <ElevationStrip profile={profile} onHover={setHovered} />

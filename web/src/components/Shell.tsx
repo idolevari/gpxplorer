@@ -45,7 +45,7 @@ export function Shell() {
                 `eyebrow whitespace-nowrap pb-1 border-b ${isActive ? 'text-[var(--coral-deep)] border-[var(--coral)]' : 'border-transparent hover:text-[var(--ink-t)]'}`
               }
             >
-              <span className="sm:hidden">Trips</span>
+              <span className="sm:hidden">Mine</span>
               <span className="hidden sm:inline">My trips</span>
             </NavLink>
           )}

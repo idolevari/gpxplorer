@@ -1,6 +1,7 @@
 import { useMemo, useRef } from 'react';
 import Map, { Layer, Marker, Source } from 'react-map-gl/mapbox';
 import type { MapRef } from 'react-map-gl/mapbox';
+import type { ExpressionSpecification } from 'mapbox-gl';
 import type { FeatureCollection } from 'geojson';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import type { TripDayRow } from '../lib/db-types';
@@ -11,9 +12,13 @@ const TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined;
 export interface TripMapProps {
   days: TripDayRow[];
   hovered: ProfilePoint | null;
+  /** Day under the cursor/viewport (day-sync from the trip page's day list).
+      Its line renders full coral and wider; every other day drops to 40%
+      opacity. null/undefined means no highlight — every day renders the same. */
+  highlightDay?: number | null;
 }
 
-export function TripMap({ days, hovered }: TripMapProps) {
+export function TripMap({ days, hovered, highlightDay = null }: TripMapProps) {
   const mapRef = useRef<MapRef>(null);
 
   const geojson: FeatureCollection = useMemo(
@@ -44,6 +49,30 @@ export function TripMap({ days, hovered }: TripMapProps) {
     };
   }, [days]);
 
+  // Highlighting is state, not motion — it applies the same whether or not
+  // the user prefers reduced motion.
+  const glowOpacity = useMemo<number | ExpressionSpecification>(
+    () =>
+      highlightDay == null
+        ? 0.25
+        : ['case', ['==', ['get', 'day'], highlightDay], 0.3, 0.08],
+    [highlightDay],
+  );
+  const lineOpacity = useMemo<number | ExpressionSpecification>(
+    () =>
+      highlightDay == null
+        ? 1
+        : ['case', ['==', ['get', 'day'], highlightDay], 1, 0.4],
+    [highlightDay],
+  );
+  const lineWidth = useMemo<number | ExpressionSpecification>(
+    () =>
+      highlightDay == null
+        ? 2
+        : ['case', ['==', ['get', 'day'], highlightDay], 3, 2],
+    [highlightDay],
+  );
+
   if (!TOKEN) {
     return (
       <div className="h-full flex items-center justify-center text-[var(--dim)]">
@@ -68,12 +97,12 @@ export function TripMap({ days, hovered }: TripMapProps) {
         <Layer
           id="route-glow"
           type="line"
-          paint={{ 'line-color': '#c94f32', 'line-width': 8, 'line-opacity': 0.25, 'line-blur': 4 }}
+          paint={{ 'line-color': '#c94f32', 'line-width': 8, 'line-opacity': glowOpacity, 'line-blur': 4 }}
         />
         <Layer
           id="route-core"
           type="line"
-          paint={{ 'line-color': '#c94f32', 'line-width': 2 }}
+          paint={{ 'line-color': '#c94f32', 'line-width': lineWidth, 'line-opacity': lineOpacity }}
         />
       </Source>
       {hovered && (

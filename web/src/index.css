@@ -76,6 +76,21 @@ body {
   @media (min-width: 1024px) {
     .lg\:hairline-r { border-right: 1px solid var(--hair); }
   }
+
+  /* Scroll reveal (useReveal): translateY 16px -> 0, opacity 0 -> 1, 500ms
+     ease-out. prefers-reduced-motion skips the observer entirely so this
+     transition never plays for those users — they get .reveal-visible
+     straight away. */
+  .reveal {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 500ms ease-out, transform 500ms ease-out;
+  }
+
+  .reveal-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 ::selection {
