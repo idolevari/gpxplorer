@@ -3,7 +3,7 @@ import uuid
 import gpxpy
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
-from auth import get_current_user_id
+from auth import get_current_user_id, get_optional_user_id
 from db import get_admin_client
 from ingest import compute_day, slugify, sort_gpx_by_start
 
@@ -108,3 +108,47 @@ def create_trip(
         raise HTTPException(502, "failed to store trip")
 
     return {"id": trip_id, "slug": slug, "days": len(day_rows)}
+
+
+@router.get("/trips/{trip_id}/days/{day_index}/gpx-url")
+def signed_gpx_url(
+    trip_id: str,
+    day_index: int,
+    token: str | None = None,
+    user_id: str | None = Depends(get_optional_user_id),
+):
+    client = get_admin_client()
+    trip = (
+        client.table("trips").select("id, owner_id, visibility, share_token")
+        .eq("id", trip_id).maybe_single().execute().data
+    )
+    # 404 for both "does not exist" and "not allowed" -- a 403 would confirm
+    # the trip exists, which is exactly what private should not leak.
+    if trip is None:
+        raise HTTPException(404, "Trip not found")
+
+    allowed = (
+        trip["visibility"] == "public"
+        or (user_id is not None and trip["owner_id"] == user_id)
+        or (
+            trip["visibility"] == "unlisted"
+            and token is not None
+            and trip.get("share_token") == token
+        )
+    )
+    if not allowed:
+        raise HTTPException(404, "Trip not found")
+
+    day = (
+        client.table("trip_days").select("gpx_path")
+        .eq("trip_id", trip_id).eq("day_index", day_index)
+        .maybe_single().execute().data
+    )
+    if day is None or not day.get("gpx_path"):
+        raise HTTPException(404, "Day not found")
+
+    signed = client.storage.from_("trip-gpx").create_signed_url(day["gpx_path"], 3600)
+    url = signed.get("signedURL") or signed.get("signedUrl")
+    if not url:
+        raise HTTPException(502, "could not sign URL")
+    return {"url": url, "expires_in": 3600}

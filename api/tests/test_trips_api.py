@@ -149,3 +149,75 @@ def test_multi_file_days_are_ordered_by_time(app_client):
     assert [d["day_index"] for d in days] == [1, 2]
     assert days[0]["date"] == "2021-03-12"
     assert days[1]["date"] == "2021-03-15"
+
+
+def install_trip(fake, visibility, token=None):
+    fake.trip = {
+        "id": "aaaaaaaa-0000-0000-0000-000000000001",
+        "owner_id": USER_ID,
+        "visibility": visibility,
+        "share_token": token,
+    }
+    fake.day = {"gpx_path": f"{USER_ID}/{fake.trip['id']}/day-01.gpx"}
+
+
+@pytest.fixture()
+def url_client(monkeypatch):
+    monkeypatch.setenv("SUPABASE_JWT_SECRET", TEST_SECRET)
+    fake = FakeSupabase()
+
+    class Q:
+        def __init__(self, name):
+            self.name = name
+        def select(self, *_): return self
+        def eq(self, *_): return self
+        def maybe_single(self): return self
+        def execute(self):
+            data = fake.trip if self.name == "trips" else fake.day
+            return type("R", (), {"data": data})()
+
+    fake.table = lambda name: Q(name)
+
+    class SignBucket:
+        def create_signed_url(self, path, ttl):
+            return {"signedURL": f"https://signed.example/{path}?exp={ttl}"}
+    fake.storage.from_ = lambda bucket: SignBucket()
+
+    import trips_api
+    monkeypatch.setattr(trips_api, "get_admin_client", lambda: fake)
+    from main import app
+    return TestClient(app), fake
+
+
+BASE = "/api/v1/trips/aaaaaaaa-0000-0000-0000-000000000001/days/1/gpx-url"
+
+
+def test_public_trip_url_needs_no_auth(url_client):
+    client, fake = url_client
+    install_trip(fake, "public")
+    res = client.get(BASE)
+    assert res.status_code == 200
+    assert res.json()["url"].startswith("https://signed.example/")
+
+
+def test_private_trip_requires_owner(url_client):
+    client, fake = url_client
+    install_trip(fake, "private")
+    assert client.get(BASE).status_code == 404
+    assert client.get(BASE, headers=auth()).status_code == 200
+
+
+def test_private_trip_hidden_from_other_users(url_client):
+    client, fake = url_client
+    install_trip(fake, "private")
+    other = make_token(sub="22222222-2222-2222-2222-222222222222")
+    res = client.get(BASE, headers={"Authorization": f"Bearer {other}"})
+    assert res.status_code == 404
+
+
+def test_unlisted_needs_the_right_token(url_client):
+    client, fake = url_client
+    install_trip(fake, "unlisted", token="cafe" * 8)
+    assert client.get(BASE).status_code == 404
+    assert client.get(BASE + "?token=wrong").status_code == 404
+    assert client.get(BASE + "?token=" + "cafe" * 8).status_code == 200
