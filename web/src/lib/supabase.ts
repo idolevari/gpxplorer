@@ -16,5 +16,19 @@ export function resolveSupabaseConfig(isDev: boolean): { url: string; anonKey: s
   );
 }
 
-const cfg = resolveSupabaseConfig(import.meta.env.DEV);
+// Fail-closed but boot-safe: a missing prod config must never ship local
+// keys (resolveSupabaseConfig still throws, and stays tested), but it also
+// must not throw at module load -- that unmounts the entire app before
+// React renders anything. A placeholder client boots the UI; every actual
+// Supabase call then fails visibly in the components' error states.
+function bootConfig(): { url: string; anonKey: string } {
+  try {
+    return resolveSupabaseConfig(import.meta.env.DEV);
+  } catch (err) {
+    console.error('[supabase] not configured:', err);
+    return { url: 'https://unconfigured.invalid', anonKey: 'unconfigured' };
+  }
+}
+
+const cfg = bootConfig();
 export const supabase = createClient(cfg.url, cfg.anonKey);
