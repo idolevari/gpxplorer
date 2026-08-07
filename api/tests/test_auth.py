@@ -78,3 +78,56 @@ def test_missing_env_fails_closed(monkeypatch):
     from auth import _jwt_secret
     with pytest.raises(RuntimeError, match="SUPABASE_JWT_SECRET"):
         _jwt_secret()
+
+
+def test_es256_token_verifies_via_jwks(monkeypatch, client):
+    """Real Supabase sessions are ES256-signed; HS256-only verification 401s
+    every real user while forged-HS256 unit tests stay green."""
+    from cryptography.hazmat.primitives.asymmetric import ec
+    private_key = ec.generate_private_key(ec.SECP256R1())
+    tok = pyjwt.encode(
+        {"sub": USER_ID, "aud": "authenticated", "role": "authenticated",
+         "exp": int(time.time()) + 3600},
+        private_key, algorithm="ES256", headers={"kid": "test-key"},
+    )
+
+    class StubJWKS:
+        def get_signing_key_from_jwt(self, _token):
+            class K:
+                key = private_key.public_key()
+            return K()
+
+    import auth
+    monkeypatch.setattr(auth, "_jwks_client", lambda: StubJWKS())
+    res = client.get("/whoami", headers={"Authorization": f"Bearer {tok}"})
+    assert res.status_code == 200
+    assert res.json() == {"user_id": USER_ID}
+
+
+def test_es256_with_wrong_key_is_401(monkeypatch, client):
+    from cryptography.hazmat.primitives.asymmetric import ec
+    signing = ec.generate_private_key(ec.SECP256R1())
+    other = ec.generate_private_key(ec.SECP256R1())
+    tok = pyjwt.encode(
+        {"sub": USER_ID, "aud": "authenticated", "role": "authenticated",
+         "exp": int(time.time()) + 3600},
+        signing, algorithm="ES256", headers={"kid": "k"},
+    )
+
+    class StubJWKS:
+        def get_signing_key_from_jwt(self, _token):
+            class K:
+                key = other.public_key()
+            return K()
+
+    import auth
+    monkeypatch.setattr(auth, "_jwks_client", lambda: StubJWKS())
+    assert client.get("/whoami", headers={"Authorization": f"Bearer {tok}"}).status_code == 401
+
+
+def test_unknown_alg_is_401(client):
+    # alg=none classic
+    header = pyjwt.utils.base64url_encode(b'{"alg":"none","typ":"JWT"}').decode()
+    payload = pyjwt.utils.base64url_encode(b'{"sub":"x","aud":"authenticated"}').decode()
+    tok = f"{header}.{payload}."
+    assert client.get("/whoami", headers={"Authorization": f"Bearer {tok}"}).status_code == 401

@@ -1,4 +1,5 @@
 import os
+from functools import lru_cache
 
 import jwt as pyjwt
 from fastapi import Depends, HTTPException
@@ -16,11 +17,29 @@ def _jwt_secret() -> str:
     return secret
 
 
+@lru_cache
+def _jwks_client() -> pyjwt.PyJWKClient:
+    url = os.getenv("SUPABASE_URL")
+    if not url:
+        # No default, ever — same fail-closed rationale as _jwt_secret: a
+        # missing env var must never silently fall back to some other JWKS.
+        raise RuntimeError("SUPABASE_URL is not set")
+    return pyjwt.PyJWKClient(f"{url}/auth/v1/.well-known/jwks.json")
+
+
 def _decode(token: str) -> str:
     try:
-        claims = pyjwt.decode(
-            token, _jwt_secret(), algorithms=["HS256"], audience="authenticated"
-        )
+        header = pyjwt.get_unverified_header(token)
+        alg = header.get("alg")
+        if alg == "HS256":
+            key = _jwt_secret()
+        elif alg in ("ES256", "RS256"):
+            key = _jwks_client().get_signing_key_from_jwt(token).key
+        else:
+            raise HTTPException(status_code=401, detail="Invalid or expired token")
+        claims = pyjwt.decode(token, key, algorithms=[alg], audience="authenticated")
+    except HTTPException:
+        raise
     except pyjwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
     sub = claims.get("sub")
