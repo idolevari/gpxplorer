@@ -21,9 +21,13 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
     allow_credentials=False,
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+
+from trips_api import router as trips_router
+
+app.include_router(trips_router)
 
 TRIPS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "trips")
 
