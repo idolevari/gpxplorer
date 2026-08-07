@@ -118,10 +118,11 @@ def signed_gpx_url(
     user_id: str | None = Depends(get_optional_user_id),
 ):
     client = get_admin_client()
-    trip = (
+    resp = (
         client.table("trips").select("id, owner_id, visibility, share_token")
-        .eq("id", trip_id).maybe_single().execute().data
+        .eq("id", trip_id).maybe_single().execute()
     )
+    trip = resp.data if resp is not None else None
     # 404 for both "does not exist" and "not allowed" -- a 403 would confirm
     # the trip exists, which is exactly what private should not leak.
     if trip is None:
@@ -139,11 +140,12 @@ def signed_gpx_url(
     if not allowed:
         raise HTTPException(404, "Trip not found")
 
-    day = (
+    resp = (
         client.table("trip_days").select("gpx_path")
         .eq("trip_id", trip_id).eq("day_index", day_index)
-        .maybe_single().execute().data
+        .maybe_single().execute()
     )
+    day = resp.data if resp is not None else None
     if day is None or not day.get("gpx_path"):
         raise HTTPException(404, "Day not found")
 
