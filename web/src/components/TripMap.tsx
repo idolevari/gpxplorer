@@ -1,5 +1,5 @@
 import { useMemo, useRef } from 'react';
-import Map, { Layer, Marker, Source } from 'react-map-gl/mapbox';
+import Map, { AttributionControl, Layer, Marker, Source } from 'react-map-gl/mapbox';
 import type { MapRef } from 'react-map-gl/mapbox';
 import type { ExpressionSpecification } from 'mapbox-gl';
 import type { FeatureCollection } from 'geojson';
@@ -93,6 +93,12 @@ export function TripMap({ days, hovered, highlightDay = null }: TripMapProps) {
       }
       attributionControl={false}
     >
+      {/* Mapbox ToS / OSM ODbL require attribution; the default Map-level
+          control only accepts boolean here, so it's disabled and this
+          dedicated component adds it with `compact` honoured explicitly —
+          it auto-collapses to the "i" icon under 640px anyway, but this
+          keeps the behaviour explicit rather than relying on that default. */}
+      <AttributionControl compact position="bottom-right" />
       <Source id="route" type="geojson" data={geojson}>
         <Layer
           id="route-glow"

@@ -12,7 +12,7 @@ export function Shell() {
       <header className="bg-[var(--paper)] hairline-b h-16 flex flex-nowrap items-baseline gap-3 sm:gap-8 px-4 sm:px-6 pt-4">
         <Link
           to="/"
-          className="font-display text-xl tracking-wide text-[var(--ink-t)] whitespace-nowrap shrink-0"
+          className="font-display text-xl tracking-wide text-[var(--ink-t)] whitespace-nowrap shrink-0 inline-flex items-center min-h-11 -my-2 py-2"
         >
           GPXplorer
         </Link>
@@ -20,7 +20,7 @@ export function Shell() {
           <NavLink
             to="/trips"
             className={({ isActive }) =>
-              `eyebrow whitespace-nowrap pb-1 border-b ${isActive ? 'text-[var(--coral-deep)] border-[var(--coral)]' : 'border-transparent hover:text-[var(--ink-t)]'}`
+              `eyebrow whitespace-nowrap border-b inline-flex items-center min-h-11 -my-2 py-2 ${isActive ? 'text-[var(--coral-deep)] border-[var(--coral)]' : 'border-transparent hover:text-[var(--ink-t)]'}`
             }
           >
             Explore
@@ -29,7 +29,7 @@ export function Shell() {
             <NavLink
               to="/new"
               className={({ isActive }) =>
-                `eyebrow whitespace-nowrap pb-1 border-b ${isActive ? 'text-[var(--coral-deep)] border-[var(--coral)]' : 'border-transparent hover:text-[var(--ink-t)]'}`
+                `eyebrow whitespace-nowrap border-b inline-flex items-center min-h-11 -my-2 py-2 ${isActive ? 'text-[var(--coral-deep)] border-[var(--coral)]' : 'border-transparent hover:text-[var(--ink-t)]'}`
               }
             >
               {/* "New trip" at sm+; "New" alone below the breakpoint keeps the
@@ -42,7 +42,7 @@ export function Shell() {
             <NavLink
               to="/me"
               className={({ isActive }) =>
-                `eyebrow whitespace-nowrap pb-1 border-b ${isActive ? 'text-[var(--coral-deep)] border-[var(--coral)]' : 'border-transparent hover:text-[var(--ink-t)]'}`
+                `eyebrow whitespace-nowrap border-b inline-flex items-center min-h-11 -my-2 py-2 ${isActive ? 'text-[var(--coral-deep)] border-[var(--coral)]' : 'border-transparent hover:text-[var(--ink-t)]'}`
               }
             >
               <span className="sm:hidden">Mine</span>
@@ -54,12 +54,15 @@ export function Shell() {
           {user ? (
             <button
               onClick={() => void signOut()}
-              className="eyebrow whitespace-nowrap hover:text-[var(--coral-deep)]"
+              className="eyebrow whitespace-nowrap hover:text-[var(--coral-deep)] inline-flex items-center min-h-11 -my-2 py-2"
             >
               Sign out
             </button>
           ) : (
-            <Link to="/signin" className="eyebrow whitespace-nowrap hover:text-[var(--coral-deep)]">
+            <Link
+              to="/signin"
+              className="eyebrow whitespace-nowrap hover:text-[var(--coral-deep)] inline-flex items-center min-h-11 -my-2 py-2"
+            >
               Sign in
             </Link>
           )}

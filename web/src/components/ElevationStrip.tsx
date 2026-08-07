@@ -18,8 +18,30 @@ export function ElevationStrip({ profile, onHover }: ElevationStripProps) {
     );
   }
 
+  const hoverByClientX = (clientX: number, rect: DOMRect) => {
+    const ratio = (clientX - rect.left) / rect.width;
+    const idx = Math.min(
+      profile.length - 1,
+      Math.max(0, Math.round(ratio * (profile.length - 1))),
+    );
+    onHover(profile[idx] ?? null);
+  };
+
   return (
-    <div className="h-28 px-2">
+    <div
+      className="h-28 px-2 touch-none"
+      onTouchStart={(e) => {
+        const touch = e.touches[0];
+        if (!touch) return;
+        hoverByClientX(touch.clientX, e.currentTarget.getBoundingClientRect());
+      }}
+      onTouchMove={(e) => {
+        const touch = e.touches[0];
+        if (!touch) return;
+        hoverByClientX(touch.clientX, e.currentTarget.getBoundingClientRect());
+      }}
+      onTouchEnd={() => onHover(null)}
+    >
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
           data={profile}
