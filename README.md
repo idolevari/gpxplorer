@@ -33,7 +33,7 @@ GPXplorer is a modern web application for viewing GPX files on interactive maps.
 
 2.  **Frontend Setup:**
     ```bash
-    cd frontend
+    cd web
     npm install
     cp .env.example .env
     # Add your VITE_MAPBOX_TOKEN in .env
@@ -42,11 +42,9 @@ GPXplorer is a modern web application for viewing GPX files on interactive maps.
 
 3.  **Backend Setup:**
     ```bash
-    cd backend
-    python -m venv venv
-    source venv/bin/activate  # On Windows: venv\Scripts\activate
-    pip install -r requirements.txt
-    uvicorn main:app --reload
+    cd api
+    uv sync
+    uv run uvicorn main:app --reload
     ```
 
 ## Deployment
