@@ -1,4 +1,5 @@
 import { ResponsiveContainer, AreaChart, Area, Tooltip, XAxis, YAxis } from 'recharts';
+import type { MouseHandlerDataParam } from 'recharts';
 import { Activity, Clock, Mountain, ArrowUp, ArrowDown } from 'lucide-react';
 import type { AggregatedStats, ElevationPoint } from '../lib/types';
 
@@ -9,7 +10,18 @@ interface StatsBarProps {
     onHover?: (point: { lat: number, lon: number } | null) => void;
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+// Recharts' own `TooltipContentProps` marks every field required, which makes
+// `<CustomTooltip />` (no props) fail to type-check as a `content` element --
+// recharts injects the real props at render time via cloneElement, not JSX.
+// A narrow local interface covering only what's actually read avoids `any`
+// without fighting that mismatch.
+interface ElevationTooltipProps {
+    active?: boolean;
+    label?: string | number;
+    payload?: ReadonlyArray<{ value?: number; payload?: ElevationPoint }>;
+}
+
+const CustomTooltip = ({ active, payload, label }: ElevationTooltipProps) => {
     if (active && payload && payload.length) {
         return (
             <div className="bg-[#030712]/90 backdrop-blur-md border border-[var(--glass-border)] p-2 rounded-lg text-xs shadow-xl">
@@ -116,14 +128,14 @@ export function StatsBar({ stats, graphData, isLoading, onHover }: StatsBarProps
                             <AreaChart
                                 data={graphData}
                                 margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-                                onMouseMove={(state: any) => {
-                                    if (state.isTooltipActive && state.activePayload && state.activePayload.length) {
-                                        const point = state.activePayload[0].payload;
-                                        if (onHover) {
-                                            onHover({ lat: point.lat, lon: point.lon });
-                                        }
-                                    } else {
-                                        if (onHover) onHover(null);
+                                onMouseMove={(state: MouseHandlerDataParam) => {
+                                    const point = state.isTooltipActive
+                                        ? graphData?.find(p => p.distance === state.activeLabel)
+                                        : undefined;
+                                    if (point && onHover) {
+                                        onHover({ lat: point.lat, lon: point.lon });
+                                    } else if (onHover) {
+                                        onHover(null);
                                     }
                                 }}
                                 onMouseLeave={() => {

@@ -2,9 +2,10 @@ import { useEffect, useState, useRef } from 'react';
 import Map, { Source, Layer, Marker } from 'react-map-gl/mapbox';
 import type { MapRef } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
-// @ts-ignore
+// @ts-expect-error - togeojson has no bundled type declarations
 import * as togeojson from 'togeojson';
 import bbox from '@turf/bbox';
+import type { Feature, FeatureCollection } from 'geojson';
 import { API_URL } from '../lib/config';
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -25,18 +26,20 @@ const NEON_COLORS = [
 ];
 
 export function MapViewer({ tripIds, hoveredPoint }: MapViewerProps) {
-    const [geoJsonData, setGeoJsonData] = useState<any>(null);
-    const [isLoading, setIsLoading] = useState(false);
+    const [geoJsonData, setGeoJsonData] = useState<FeatureCollection | null>(null);
+    // Tracks the tripIds the last route fetch settled for, so "loading" can
+    // be derived instead of stored (mirrors visibleGeoJson below).
+    const [settledTripIds, setSettledTripIds] = useState<string[]>(tripIds);
     const [loadError, setLoadError] = useState<string | null>(null);
     const mapRef = useRef<MapRef>(null);
 
+    const visibleGeoJson = tripIds.length === 0 ? null : geoJsonData;
+    const isLoading = tripIds.length > 0 && settledTripIds !== tripIds;
+
     useEffect(() => {
         if (tripIds.length === 0) {
-            setGeoJsonData(null);
             return;
         }
-
-        setIsLoading(true);
 
         const fetchPromises = tripIds.map((id, index) =>
             fetch(`${API_URL}/api/trips/${id}/download`)
@@ -47,12 +50,12 @@ export function MapViewer({ tripIds, hoveredPoint }: MapViewerProps) {
                 .then(gpxText => {
                     const parser = new DOMParser();
                     const gpx = parser.parseFromString(gpxText, "application/xml");
-                    const converted = togeojson.gpx(gpx);
+                    const converted = togeojson.gpx(gpx) as FeatureCollection;
 
                     // Assign color to all features of this trip
                     const color = NEON_COLORS[index % NEON_COLORS.length];
                     if (converted.features) {
-                        converted.features.forEach((feature: any) => {
+                        converted.features.forEach((feature: Feature) => {
                             feature.properties = {
                                 ...feature.properties,
                                 color: color,
@@ -67,9 +70,9 @@ export function MapViewer({ tripIds, hoveredPoint }: MapViewerProps) {
         Promise.all(fetchPromises)
             .then(results => {
                 // Merge all feature collections
-                const allFeatures = results.flatMap((fc: any) => fc.features || []);
-                const combinedGeoJson = {
-                    type: "FeatureCollection" as const,
+                const allFeatures = results.flatMap((fc) => fc.features || []);
+                const combinedGeoJson: FeatureCollection = {
+                    type: "FeatureCollection",
                     features: allFeatures
                 };
 
@@ -78,7 +81,6 @@ export function MapViewer({ tripIds, hoveredPoint }: MapViewerProps) {
 
                 // Fit bounds to all trips
                 if (allFeatures.length > 0) {
-                    // @ts-ignore
                     const box = bbox(combinedGeoJson);
                     if (mapRef.current) {
                         mapRef.current.fitBounds(
@@ -96,7 +98,7 @@ export function MapViewer({ tripIds, hoveredPoint }: MapViewerProps) {
                 setLoadError("Couldn't load the route for this trip.");
             })
             .finally(() => {
-                setIsLoading(false);
+                setSettledTripIds(tripIds);
             });
 
     }, [tripIds]);
@@ -167,8 +169,8 @@ export function MapViewer({ tripIds, hoveredPoint }: MapViewerProps) {
                 mapStyle="mapbox://styles/mapbox/dark-v11"
                 mapboxAccessToken={MAPBOX_TOKEN}
             >
-                {geoJsonData && (
-                    <Source id="my-data" type="geojson" data={geoJsonData}>
+                {visibleGeoJson && (
+                    <Source id="my-data" type="geojson" data={visibleGeoJson}>
                         {/* Glow Layer */}
                         <Layer
                             id="line-layer-glow"
