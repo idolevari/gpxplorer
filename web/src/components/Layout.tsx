@@ -1,9 +1,11 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Map, Download } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { StatsBar } from './StatsBar';
 import type { AggregatedStats, ElevationPoint, Trip } from '../lib/types';
 import { API_URL } from '../lib/config';
+import { useAuth } from '../lib/auth-context';
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -34,6 +36,7 @@ export function Layout({
     metricsError
 }: LayoutProps) {
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = React.useState(false);
+    const { user, signOut } = useAuth();
 
     return (
         <div className="flex flex-col h-screen overflow-hidden selection:bg-[var(--accent-primary)] selection:text-white">
@@ -78,6 +81,18 @@ export function Layout({
                         <Download className="w-4 h-4" />
                         <span className="hidden md:inline">Download Active</span>
                     </button>
+                    {user ? (
+                        <button onClick={() => void signOut()}
+                            className="text-sm text-[var(--text-secondary)] hover:text-white transition-colors"
+                            aria-label={`Sign out ${user.email ?? ''}`}>
+                            Sign out
+                        </button>
+                    ) : (
+                        <Link to="/signin"
+                            className="text-sm text-[var(--text-secondary)] hover:text-white transition-colors">
+                            Sign in
+                        </Link>
+                    )}
                 </div>
             </header>
             <div className="flex-1 flex overflow-hidden z-10 relative">
