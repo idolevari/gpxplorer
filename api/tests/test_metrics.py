@@ -10,8 +10,8 @@ client = TestClient(app)
 
 
 @pytest.fixture(autouse=True)
-def run_from_backend_dir(monkeypatch):
-    """Tests that open GPX fixtures directly use paths relative to backend/.
+def run_from_api_dir(monkeypatch):
+    """Tests that open GPX fixtures directly use paths relative to api/.
 
     The application no longer depends on the working directory -- TRIPS_DIR is
     absolute -- but the tests still read fixture files by relative path.
