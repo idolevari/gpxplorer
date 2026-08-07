@@ -68,7 +68,7 @@ def app_client(monkeypatch):
 
 
 def gpx_bytes():
-    with open("trips/hod_hasharon_to_tel_aviv.gpx", "rb") as f:
+    with open("tests/fixtures/day.gpx", "rb") as f:
         return f.read()
 
 
@@ -132,15 +132,20 @@ def test_bad_activity_type_is_422(app_client):
 
 
 def test_multi_file_days_are_ordered_by_time(app_client):
+    from tests.test_ingest import synthetic_gpx
+
     client, fake = app_client
-    with open("trips/dan_to_ginosar.gpx", "rb") as f:  # 2021-03-12
-        earlier = f.read()
+    earlier = synthetic_gpx(with_times=True)          # 2021-03-12
     later = gpx_bytes()                                # 2021-03-15
+
+    # Serialize synthetic_gpx to bytes
+    earlier_bytes = io.BytesIO(earlier.to_xml().encode('utf-8'))
+
     res = client.post(
         "/api/v1/trips", data={"title": "Two Days"},
         files=[
             ("files", ("later.gpx", io.BytesIO(later), "application/gpx+xml")),
-            ("files", ("earlier.gpx", io.BytesIO(earlier), "application/gpx+xml")),
+            ("files", ("earlier.gpx", earlier_bytes, "application/gpx+xml")),
         ],
         headers=auth(),
     )

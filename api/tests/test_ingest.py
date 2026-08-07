@@ -6,7 +6,7 @@ from ingest import compute_day, downsample, slugify, sort_gpx_by_start
 
 
 def real_gpx():
-    with open("trips/dan_to_ginosar.gpx") as f:
+    with open("tests/fixtures/day.gpx") as f:
         return gpxpy.parse(f)
 
 
@@ -30,8 +30,10 @@ def synthetic_gpx(n=10, with_times=False, with_ele=False):
 
 def test_real_file_matches_known_values():
     m = compute_day(real_gpx())
-    assert m.distance_m == pytest.approx(64_970, abs=100)
-    assert m.elevation_gain_m == pytest.approx(547, abs=5)
+    assert m.distance_m == pytest.approx(23_600, abs=100)
+    assert m.elevation_gain_m == pytest.approx(171, abs=5)
+    assert m.elevation_loss_m == pytest.approx(189, abs=5)
+    assert m.max_elevation_m == pytest.approx(37, abs=1)
     assert m.moving_time_s is not None and m.moving_time_s > 0
     assert m.avg_speed_mps == pytest.approx(
         m.moving_distance_m / m.moving_time_s, rel=0.01)
