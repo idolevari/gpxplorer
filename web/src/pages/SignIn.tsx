@@ -10,16 +10,18 @@ export function SignIn() {
 
   if (user) {
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center gap-4 text-[#e6e0d2] bg-[#090d0c]">
-        <p>Signed in as {user.email}</p>
-        <button className="underline" onClick={() => void signOut()}>Sign out</button>
-        <Link className="underline" to="/">Back to the map</Link>
+      <main className="min-h-full flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <p>Signed in as {user.email}</p>
+          <button className="underline" onClick={() => void signOut()}>Sign out</button>
+          <Link className="underline" to="/">Back to the map</Link>
+        </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-[#090d0c] text-[#e6e0d2]">
+    <main className="min-h-full flex items-center justify-center">
       {sent ? (
         <p role="status">Check your email for the sign-in link.</p>
       ) : (
@@ -33,7 +35,8 @@ export function SignIn() {
             });
           }}
         >
-          <h1 className="text-xl">Sign in to GPXplorer</h1>
+          <h1 className="font-display text-3xl mb-4">Sign in</h1>
+          <p className="eyebrow mb-8">Magic link — no password</p>
           <input
             type="email"
             required
@@ -41,12 +44,12 @@ export function SignIn() {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
             aria-label="Email address"
-            className="border border-[#e6e0d2]/30 bg-transparent px-3 py-2"
+            className="bg-transparent border-0 border-b border-[var(--hair)] focus:border-[var(--amber)] px-0 py-2 font-mono text-[var(--bone)] outline-none w-72"
           />
-          <button type="submit" className="bg-[#d4a04a] text-[#100c06] py-2">
-            Send magic link
+          <button type="submit" className="mt-6 bg-[var(--amber)] text-[var(--amber-ink)] px-6 py-3 eyebrow">
+            Send link
           </button>
-          {error && <p role="alert" className="text-red-400 text-sm">{error}</p>}
+          {error && <p role="alert" className="text-[var(--red)] text-sm">{error}</p>}
         </form>
       )}
     </main>
