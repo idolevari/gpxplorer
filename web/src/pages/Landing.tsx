@@ -27,7 +27,7 @@ export function Landing() {
         <div className="flex items-center justify-center gap-6 flex-wrap">
           <Link
             to={user ? '/new' : '/signin'}
-            className="bg-[var(--amber)] text-[var(--amber-ink)] px-8 py-4 eyebrow"
+            className="bg-[var(--amber)] text-[var(--amber-ink)] px-8 py-4 eyebrow on-fill"
           >
             Start a trip
           </Link>

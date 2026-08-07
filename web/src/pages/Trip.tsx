@@ -124,7 +124,7 @@ export function Trip({ mode }: { mode: 'id' | 'token' }) {
               {d.gpx_path && (
                 <button
                   onClick={() => downloadDay(d)}
-                  className="eyebrow hover:text-[var(--amber)]"
+                  className="eyebrow hover:text-[var(--amber)] min-h-11 min-w-11 inline-flex items-center justify-center -m-2 p-2"
                   aria-label={`Download GPX for day ${d.day_index}`}
                 >
                   gpx
@@ -138,7 +138,7 @@ export function Trip({ mode }: { mode: 'id' | 'token' }) {
       {/* right: map above elevation. The empty band on the far right is the
           phase-4 chat column's slot -- a column gets added, not a restructure. */}
       <div className="flex-1 min-h-[420px] flex flex-col min-w-0">
-        <div className="flex-1 min-h-0">
+        <div className="h-[45vh] shrink-0 lg:h-auto lg:flex-1 lg:min-h-0">
           <TripMap days={days} hovered={hovered} />
         </div>
         <div className="hairline-t">

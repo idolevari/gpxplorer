@@ -45,6 +45,9 @@ body {
   color: var(--faint);
 }
 
+/* eyebrow is a label voice, not a button voice: filled buttons override it */
+.eyebrow.on-fill { color: var(--amber-ink); }
+
 .hairline-t { border-top: 1px solid var(--hair); }
 .hairline-b { border-bottom: 1px solid var(--hair); }
 

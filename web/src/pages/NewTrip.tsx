@@ -124,7 +124,7 @@ export function NewTrip() {
 
         <button
           type="submit" disabled={busy}
-          className="self-start bg-[var(--amber)] text-[var(--amber-ink)] px-8 py-3 eyebrow disabled:opacity-50"
+          className="self-start bg-[var(--amber)] text-[var(--amber-ink)] px-8 py-3 eyebrow on-fill disabled:opacity-50"
         >
           {busy ? 'Reading your days…' : 'Create trip'}
         </button>
