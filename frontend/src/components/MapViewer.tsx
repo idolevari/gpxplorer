@@ -5,9 +5,9 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 // @ts-ignore
 import * as togeojson from 'togeojson';
 import bbox from '@turf/bbox';
+import { API_URL } from '../lib/config';
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
-const API_URL = import.meta.env.DEV ? 'http://localhost:8000' : 'https://gpxplorer-production.up.railway.app';
 
 interface MapViewerProps {
     tripIds: string[];
@@ -27,6 +27,7 @@ const NEON_COLORS = [
 export function MapViewer({ tripIds, hoveredPoint }: MapViewerProps) {
     const [geoJsonData, setGeoJsonData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const mapRef = useRef<MapRef>(null);
 
     useEffect(() => {
@@ -39,7 +40,10 @@ export function MapViewer({ tripIds, hoveredPoint }: MapViewerProps) {
 
         const fetchPromises = tripIds.map((id, index) =>
             fetch(`${API_URL}/api/trips/${id}/download`)
-                .then(res => res.text())
+                .then(res => {
+                    if (!res.ok) throw new Error(`Failed to load route for ${id} (${res.status})`);
+                    return res.text();
+                })
                 .then(gpxText => {
                     const parser = new DOMParser();
                     const gpx = parser.parseFromString(gpxText, "application/xml");
@@ -70,6 +74,7 @@ export function MapViewer({ tripIds, hoveredPoint }: MapViewerProps) {
                 };
 
                 setGeoJsonData(combinedGeoJson);
+                setLoadError(null);
 
                 // Fit bounds to all trips
                 if (allFeatures.length > 0) {
@@ -87,7 +92,8 @@ export function MapViewer({ tripIds, hoveredPoint }: MapViewerProps) {
                 }
             })
             .catch(err => {
-                console.error("Error loading trips:", err);
+                console.error('Failed to load GPX', err);
+                setLoadError("Couldn't load the route for this trip.");
             })
             .finally(() => {
                 setIsLoading(false);
@@ -107,6 +113,14 @@ export function MapViewer({ tripIds, hoveredPoint }: MapViewerProps) {
         return (
             <div className="flex items-center justify-center h-full bg-[#030712] text-[var(--text-secondary)]">
                 <p>Select trips from the sidebar to view them on the map.</p>
+            </div>
+        );
+    }
+
+    if (loadError) {
+        return (
+            <div role="alert" className="w-full h-full flex items-center justify-center text-red-300 text-sm p-6 text-center">
+                {loadError}
             </div>
         );
     }

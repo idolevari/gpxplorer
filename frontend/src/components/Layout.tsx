@@ -2,12 +2,8 @@ import React from 'react';
 import { Map, Download } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { StatsBar } from './StatsBar';
-
-interface Trip {
-    id: string;
-    name: string;
-    description: string;
-}
+import type { AggregatedStats, ElevationPoint, Trip } from '../lib/types';
+import { API_URL } from '../lib/config';
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -15,11 +11,13 @@ interface LayoutProps {
     selectedTrips: string[];
     onToggleTrip: (id: string) => void;
     isLoadingTrips: boolean;
-    stats?: any;
-    graphData?: any;
+    stats?: AggregatedStats | null;
+    graphData?: ElevationPoint[] | null;
     isMetricsLoading?: boolean;
     hoveredPoint?: { lat: number, lon: number } | null;
     onHoverPoint?: (point: { lat: number, lon: number } | null) => void;
+    tripsError?: string | null;
+    metricsError?: string | null;
 }
 
 export function Layout({
@@ -31,7 +29,9 @@ export function Layout({
     stats,
     graphData,
     isMetricsLoading,
-    onHoverPoint
+    onHoverPoint,
+    tripsError,
+    metricsError
 }: LayoutProps) {
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = React.useState(false);
 
@@ -46,8 +46,10 @@ export function Layout({
                     <button
                         onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
                         className="md:hidden p-2 text-[var(--text-secondary)] hover:text-white transition-colors"
+                        aria-label={isMobileSidebarOpen ? 'Close menu' : 'Open menu'}
+                        aria-expanded={isMobileSidebarOpen}
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                             <line x1="3" y1="12" x2="21" y2="12"></line>
                             <line x1="3" y1="6" x2="21" y2="6"></line>
                             <line x1="3" y1="18" x2="21" y2="18"></line>
@@ -66,12 +68,12 @@ export function Layout({
                         onClick={() => {
                             const lastSelected = selectedTrips.length > 0 ? selectedTrips[selectedTrips.length - 1] : null;
                             if (lastSelected) {
-                                const API_URL = import.meta.env.DEV ? 'http://localhost:8000' : 'https://gpxplorer-production.up.railway.app';
                                 window.open(`${API_URL}/api/trips/${lastSelected}/download`, '_blank');
                             }
                         }}
                         disabled={selectedTrips.length === 0}
                         className="flex items-center gap-2 px-3 md:px-5 py-2 text-sm font-bold text-white bg-[var(--accent-primary)] hover:bg-blue-400 rounded-lg shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:shadow-[0_0_30px_rgba(59,130,246,0.5)] transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                        aria-label="Download active trip"
                     >
                         <Download className="w-4 h-4" />
                         <span className="hidden md:inline">Download Active</span>
@@ -88,6 +90,8 @@ export function Layout({
                     isLoading={isLoadingTrips}
                     isOpen={isMobileSidebarOpen}
                     onClose={() => setIsMobileSidebarOpen(false)}
+                    tripsError={tripsError}
+                    metricsError={metricsError}
                 />
                 <main className="flex-1 relative flex flex-col">
                     <div className="flex-1 relative">

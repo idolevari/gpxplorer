@@ -83,17 +83,25 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 tests/
-.python-version
 ```
+
+`.python-version` must **not** be listed here — Step 6's Dockerfile copies it into the
+build context, and excluding it makes `docker build` fail with
+`"/.python-version": not found`.
 
 - [ ] **Step 6: Rewrite `backend/Dockerfile`**
 
 Two fixes beyond uv: the old `CMD` hardcoded `--port 8000` and ignored Railway's injected `$PORT`, and the exec form could not expand it. Shell form fixes that and makes `Procfile` redundant.
 
+The uv image tag is pinned deliberately. `:latest` would leave the tool that resolves
+every other pinned dependency floating, so two builds weeks apart could silently use
+different resolvers — a Railway deploy could start failing with nothing in this repo's
+history to explain why.
+
 ```dockerfile
 FROM python:3.11-slim
 
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.9.22 /uv /uvx /bin/
 
 WORKDIR /app
 
@@ -222,6 +230,13 @@ def test_download_returns_gpx_not_json():
 Run: `cd backend && uv run pytest -v`
 Expected: 5 passed. These characterise existing correct behaviour — they should pass immediately. If `test_metrics_match_known_values` fails, stop: something has changed in the GPX files or gpxpy version and must be understood before proceeding.
 
+**Amended after review (commit `14e28c5`).** The test file above was strengthened before
+Task 3: mutation testing proved that swapping `length_3d()` for `length_2d()` passed this
+suite, because the two differ by only ~32 m on this route. Tightening the distance
+tolerance did **not** fix it — a dedicated `test_distance_is_3d_not_2d` guard was added
+instead, comparing the API's distance against both computed values. If you re-run this
+plan from scratch, take the test file from `14e28c5`, not from the block above.
+
 - [ ] **Step 4: Create `.github/workflows/ci.yml`**
 
 Paths here are the pre-rename ones and get updated in Task 8.
@@ -340,7 +355,7 @@ In `backend/main.py`, replace the `stats` dict at lines 83–91 with:
 - [ ] **Step 4: Run the full suite**
 
 Run: `cd backend && uv run pytest -v`
-Expected: 7 passed
+Expected: 8 passed
 
 - [ ] **Step 5: Commit**
 
@@ -408,7 +423,6 @@ import os
 from functools import lru_cache
 
 import gpxpy
-import gpxpy.gpx
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -445,7 +459,7 @@ def load_gpx(filename: str):
         return gpxpy.parse(f)
 ```
 
-`JSONResponse` and `math` were imported and never used; both are gone. `TRIPS_DIR` is now absolute, so the server no longer has to be started from `backend/`.
+`JSONResponse` and `math` were imported and never used; both are gone. `import gpxpy.gpx` goes too — it existed only for `gpxpy.gpx.GPX()` in the composite branches deleted in Step 4, so keeping it would leave a fresh dead import behind. `TRIPS_DIR` is now absolute, so the server no longer has to be started from `backend/`.
 
 - [ ] **Step 4: Replace both endpoint bodies**
 
@@ -483,17 +497,38 @@ Two changes worth naming. The `type: "composite"` branches are deleted — no tr
 
 Change line `async def get_trips():` to `def get_trips():`.
 
-- [ ] **Step 6: Run the full suite**
+- [ ] **Step 6: Correct the test fixture's now-stale docstring**
+
+`backend/tests/test_metrics.py` has an autouse fixture whose docstring reads
+*"main.py resolves GPX paths relative to the working directory."* After Step 3 that is
+no longer true — `TRIPS_DIR` is absolute. The fixture must **stay**, because
+`test_distance_is_3d_not_2d` opens `trips/dan_to_ginosar.gpx` relative to the working
+directory itself, but its stated reason is now wrong and would mislead the next reader.
+
+Replace the docstring only, leaving the fixture body unchanged:
+
+```python
+@pytest.fixture(autouse=True)
+def run_from_backend_dir(monkeypatch):
+    """Tests that open GPX fixtures directly use paths relative to backend/.
+
+    The application no longer depends on the working directory -- TRIPS_DIR is
+    absolute -- but the tests still read fixture files by relative path.
+    """
+```
+
+- [ ] **Step 7: Run the full suite**
 
 Run: `cd backend && uv run pytest -v`
-Expected: 11 passed
+Expected: 12 passed
 
-- [ ] **Step 7: Verify the metrics did not change**
+- [ ] **Step 8: Verify the metrics did not change**
 
-Run: `cd backend && uv run pytest tests/test_metrics.py::test_metrics_match_known_values -v`
-Expected: PASS — this is the guard that the refactor changed no numbers.
+Run: `cd backend && uv run pytest tests/test_metrics.py -k "known_values or 3d_not_2d" -v`
+Expected: both PASS — these are the guards that the refactor changed no numbers, and that
+distance is still measured in three dimensions.
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
 git add backend/main.py backend/tests/test_metrics.py
@@ -1130,6 +1165,122 @@ below md, removing it from the accessibility tree on mobile."
 
 ---
 
+### Task 7b: Get CI actually green
+
+**Files:**
+- Modify: `frontend/src/App.tsx`, `frontend/src/components/MapViewer.tsx`, `frontend/src/components/StatsBar.tsx`
+
+**Interfaces:**
+- Consumes: `AggregatedStats`, `ElevationPoint`, `Trip` from `src/lib/types.ts` (Task 5)
+- Produces: a passing `npm run lint`, which unblocks every CI step after it
+
+**Why this exists:** Task 2 added `npm run lint` to CI without first checking it could pass.
+It could not — `main` had **15 lint errors** before any of this work began. GitHub Actions
+stops a job at its first failing step, so `npm test` and `npm run build` have **never run
+in CI**. The frontend has had no effective CI since the day it was added. Task 5's typing
+work cleared six errors; these are the remaining nine.
+
+This runs before the rename so that the rename has a green baseline. If CI is already red,
+a red CI after the rename tells you nothing.
+
+- [ ] **Step 1: Confirm the starting state**
+
+Run: `cd frontend && npx eslint . --format json | python3 -c "import json,sys; print(sum(len(f['messages']) for f in json.load(sys.stdin)))"`
+Expected: `9`
+
+- [ ] **Step 2: Replace both `@ts-ignore` comments**
+
+`MapViewer.tsx:5` and `MapViewer.tsx:76`. `@ts-expect-error` fails loudly if the error it
+suppresses ever goes away, whereas `@ts-ignore` silently rots. Keep the explanatory text.
+
+```tsx
+// @ts-expect-error - togeojson has no bundled type declarations
+```
+
+```tsx
+// @ts-expect-error - @turf/bbox's tuple return is wider than fitBounds accepts
+```
+
+- [ ] **Step 3: Type the GeoJSON state and callbacks**
+
+`MapViewer.tsx:28`, `:51`, `:66` are `any`. Import the real types — `geojson` types ship
+with `mapbox-gl`, so no new dependency should be needed:
+
+```tsx
+import type { Feature, FeatureCollection } from 'geojson';
+```
+
+Type the state as `useState<FeatureCollection | null>(null)` and the feature callbacks as
+`(f: Feature)`. If `geojson` types are genuinely absent, run
+`npm install -D @types/geojson` and say so in your report rather than falling back to `any`.
+
+- [ ] **Step 4: Type the Recharts tooltip**
+
+`StatsBar.tsx:12` and `:119` are `any` on `CustomTooltip`. Recharts 3 ships its own types:
+
+```tsx
+import type { TooltipContentProps } from 'recharts';
+```
+
+If that exact name is not exported by the installed version, define a narrow local
+interface describing only the fields actually read (`active`, `label`, and
+`payload[0].value` / `payload[0].payload`) rather than reaching for `any`.
+
+- [ ] **Step 5: Fix `set-state-in-effect` by deriving, not by disabling**
+
+`App.tsx:45` and `MapViewer.tsx:34` both call `setState` synchronously inside an effect
+body to clear stale data when the selection empties. React flags this because it causes a
+cascading re-render. The fix is to stop **storing** a value that can be **computed**.
+
+In `App.tsx`, delete the `setTripStats(null); setGraphData(null);` lines from the effect's
+early return, leave the bare `return;`, and derive at the point of use:
+
+```tsx
+  const hasSelection = selectedTrips.length > 0;
+  const visibleStats = hasSelection ? tripStats : null;
+  const visibleGraph = hasSelection ? graphData : null;
+```
+
+Pass `visibleStats` and `visibleGraph` to `<Layout>` in place of the raw state.
+
+Apply the same shape in `MapViewer.tsx`: drop `setGeoJsonData(null)` from the early
+return and derive `const visibleGeoJson = tripIds.length === 0 ? null : geoJsonData;`,
+using that wherever `geoJsonData` is currently read in the render.
+
+**Do not silence either rule with `eslint-disable`.** If derivation turns out not to work
+for one of these, stop and report rather than suppressing — a disabled rule here would
+hide exactly the cascading-render problem the rule exists to catch.
+
+- [ ] **Step 6: Verify the whole CI chain locally, in CI's order**
+
+Run: `cd frontend && npm run lint && npm test && npm run build`
+Expected: lint clean with no output, 6 tests passed, build succeeds. This is the first
+time all three have run in sequence successfully.
+
+- [ ] **Step 7: Confirm no behaviour changed**
+
+Run: `cd frontend && npx tsc -p tsconfig.app.json --noEmit`
+Expected: no output. The derivation in Step 5 must not change what renders — an empty
+selection still shows no stats and no route, it is simply computed rather than stored.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add frontend/src
+git commit -m "fix(web): clear the lint errors blocking every CI step
+
+CI ran npm run lint first and it had never passed -- main carried 15
+errors before this branch. Actions stops at the first failing step, so
+npm test and npm run build never executed. The frontend has had no
+effective CI since it was added.
+
+Replaces two @ts-ignore with @ts-expect-error, types the GeoJSON state
+and the Recharts tooltip, and fixes both set-state-in-effect warnings by
+deriving the cleared value instead of storing it."
+```
+
+---
+
 ### Task 8: Rename to `web/` and `api/`
 
 **Files:**
@@ -1166,7 +1317,7 @@ Create `netlify.toml` at the repo root:
 [build]
   base = "web"
   command = "npm run build"
-  publish = "web/dist"
+  publish = "dist"
 
 [dev]
   command = "npm run dev"
@@ -1180,7 +1331,11 @@ Create `netlify.toml` at the repo root:
   status = 200
 ```
 
-Note `publish` is relative to the repo root, not to `base`.
+`publish` is written relative to `base`, which is how Netlify resolves it when `base` is
+set. If the deploy in Step 12 fails with a "publish directory not found" error, try
+`publish = "web/dist"` instead — Netlify's handling of this pair has changed across
+versions, and Step 12's deploy check is what settles it. Do not guess at both; change one
+value, redeploy, and record which worked.
 
 - [ ] **Step 3: Pin the Railway build in the repo**
 
@@ -1260,7 +1415,7 @@ Push the branch and confirm a Netlify preview deploy succeeds and the Railway se
 After all eight tasks:
 
 ```bash
-cd api && uv run pytest -v          # 11 passed
+cd api && uv run pytest -v          # 12 passed
 cd ../web && npm run lint && npm test && npm run build
 ```
 

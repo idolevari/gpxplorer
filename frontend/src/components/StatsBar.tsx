@@ -1,26 +1,9 @@
 import { ResponsiveContainer, AreaChart, Area, Tooltip, XAxis, YAxis } from 'recharts';
 import { Activity, Clock, Mountain, ArrowUp, ArrowDown } from 'lucide-react';
-
-interface TripStats {
-    distance_km: number;
-    elevation_gain_m: number;
-    elevation_loss_m: number;
-    moving_time_s: number;
-    stopped_time_s: number;
-    max_speed_kmh: number;
-    avg_speed_kmh: number;
-    max_elevation_m: number;
-}
-
-interface ElevationPoint {
-    distance: number;
-    elevation: number;
-    lat?: number;
-    lon?: number;
-}
+import type { AggregatedStats, ElevationPoint } from '../lib/types';
 
 interface StatsBarProps {
-    stats: TripStats | null;
+    stats: AggregatedStats | null;
     graphData: ElevationPoint[] | null;
     isLoading: boolean;
     onHover?: (point: { lat: number, lon: number } | null) => void;

@@ -1,21 +1,42 @@
+import os
+from functools import lru_cache
+
+import gpxpy
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
-import os
-import gpxpy
-import gpxpy.gpx
-import math
+from fastapi.responses import FileResponse
 
-app = FastAPI()
+app = FastAPI(title="GPXplorer API")
 
-# Allow CORS for frontend
+ALLOWED_ORIGINS = [
+    o.strip()
+    for o in os.getenv(
+        "ALLOWED_ORIGINS",
+        "http://localhost:5173,https://gpxplorer.netlify.app",
+    ).split(",")
+    if o.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for dev/prod
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=False,
+    allow_methods=["GET"],
     allow_headers=["*"],
 )
+
+TRIPS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "trips")
+
+
+@lru_cache(maxsize=32)
+def load_gpx(filename: str):
+    """Parse a GPX file once and keep it. The files are static at runtime."""
+    path = os.path.join(TRIPS_DIR, filename)
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="GPX file not found")
+    with open(path, "r") as f:
+        return gpxpy.parse(f)
+
 
 TRIPS = {
     "dan-to-ginosar": {
@@ -86,6 +107,7 @@ def calculate_stats(gpx):
         "elevation_loss_m": round(downhill),
         "moving_time_s": moving_data.moving_time,
         "stopped_time_s": moving_data.stopped_time,
+        "moving_distance_m": round(moving_data.moving_distance, 1),
         "max_speed_kmh": round(moving_data.max_speed * 3.6, 1) if moving_data.max_speed else 0,
         "avg_speed_kmh": round(moving_data.moving_distance / moving_data.moving_time * 3.6, 1) if moving_data.moving_time > 0 else 0
     }
@@ -128,7 +150,7 @@ def calculate_stats(gpx):
     }
 
 @app.get("/api/trips")
-async def get_trips():
+def get_trips():
     """Returns a list of available trips."""
     trip_list = []
     for trip_id, data in TRIPS.items():
@@ -140,73 +162,25 @@ async def get_trips():
     return trip_list
 
 @app.get("/api/trips/{trip_id}/download")
-async def download_trip_gpx(trip_id: str):
-    """
-    Returns the GPX file content.
-    If 'composite', merges multiples files.
-    """
+def download_trip_gpx(trip_id: str):
+    """Returns the raw GPX file."""
     if trip_id not in TRIPS:
         raise HTTPException(status_code=404, detail="Trip not found")
 
-    trip_info = TRIPS[trip_id]
-    
-    if trip_info["type"] == "composite":
-        # Create a new GPX object to hold the merged data
-        combined_gpx = gpxpy.gpx.GPX()
+    filename = TRIPS[trip_id]["file"]
+    path = os.path.join(TRIPS_DIR, filename)
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="GPX file not found")
 
-        for filename in trip_info["files"]:
-            file_path = os.path.join("trips", filename)
-            if os.path.exists(file_path):
-                # Parse each file
-                with open(file_path, "r") as f:
-                    gpx = gpxpy.parse(f)
-                    
-                    if trip_info.get("distinct_tracks"):
-                         # Keep tracks distinct (add them as separate tracks)
-                         combined_gpx.tracks.extend(gpx.tracks)
-                    else:
-                         # Merge all segments into one long track (original behavior)
-                         # This logic might need refinement if 'distinct_tracks' is strictly preferred now
-                         if not combined_gpx.tracks:
-                             combined_gpx.tracks.append(gpxpy.gpx.GPXTrack())
-                         
-                         for track in gpx.tracks:
-                             for segment in track.segments:
-                                  combined_gpx.tracks[0].segments.append(segment)
+    return FileResponse(
+        path, media_type="application/gpx+xml", filename=f"{trip_id}.gpx"
+    )
 
-        # Return the Combined GPX as a string response
-        return combined_gpx.to_xml()
-
-    else:
-        # Single file download
-        file_path = os.path.join("trips", trip_info["file"])
-        if not os.path.exists(file_path):
-             raise HTTPException(status_code=404, detail="GPX file not found")
-        return FileResponse(file_path, media_type='application/gpx+xml', filename=f"{trip_id}.gpx")
 
 @app.get("/api/trips/{trip_id}/metrics")
-async def get_trip_metrics(trip_id: str):
+def get_trip_metrics(trip_id: str):
     """Returns statistics and elevation profile data for a trip."""
     if trip_id not in TRIPS:
         raise HTTPException(status_code=404, detail="Trip not found")
 
-    trip_info = TRIPS[trip_id]
-    
-    if trip_info["type"] == "composite":
-        combined_gpx = gpxpy.gpx.GPX()
-        for filename in trip_info["files"]:
-            file_path = os.path.join("trips", filename)
-            if os.path.exists(file_path):
-                with open(file_path, "r") as f:
-                    gpx = gpxpy.parse(f)
-                    combined_gpx.tracks.extend(gpx.tracks)
-        return calculate_stats(combined_gpx)
-
-    else:
-        file_path = os.path.join("trips", trip_info["file"])
-        if not os.path.exists(file_path):
-             raise HTTPException(status_code=404, detail="GPX file not found")
-        
-        with open(file_path, "r") as f:
-            gpx = gpxpy.parse(f)
-            return calculate_stats(gpx)
+    return calculate_stats(load_gpx(TRIPS[trip_id]["file"]))
