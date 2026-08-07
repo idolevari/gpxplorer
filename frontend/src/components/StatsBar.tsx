@@ -129,9 +129,11 @@ export function StatsBar({ stats, graphData, isLoading, onHover }: StatsBarProps
                                 data={graphData}
                                 margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
                                 onMouseMove={(state: MouseHandlerDataParam) => {
-                                    const point = state.isTooltipActive
-                                        ? graphData?.find(p => p.distance === state.activeLabel)
-                                        : undefined;
+                                    const idx =
+                                        state.isTooltipActive && typeof state.activeIndex === 'number'
+                                            ? state.activeIndex
+                                            : null;
+                                    const point = idx != null ? graphData?.[idx] : undefined;
                                     if (point && onHover) {
                                         onHover({ lat: point.lat, lon: point.lon });
                                     } else if (onHover) {
