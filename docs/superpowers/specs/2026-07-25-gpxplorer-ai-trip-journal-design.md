@@ -421,6 +421,30 @@ tokens**. Before any AI endpoint ships:
 - **Committed to dark.** This is one visual world, not a theme with a light variant.
 - Place names in italic serif, following map labelling convention.
 
+### §9.1 — v1 revision: light, Polarsteps-inspired (2026-08-07)
+
+Owner's verdict after using the live product, and it overrides this section's
+dark commitment: **the app moves to a light theme**, warmer and closer to
+Polarsteps' register — generous whitespace, photographic warmth, rounded
+softness where the survey sheet was all hairlines, and **scroll-driven
+storytelling** on the landing and trip pages. What survives the pivot: the
+honesty rules (nulls render as absence, activity-appropriate metrics), the
+annotated relationship between narrative and map, amber/red as accents
+recoloured for a light ground, and chat's reserved slot. What changes:
+ink ground -> light paper, Didot/Menlo pairing revisited for warmth,
+radius-0 austerity relaxed.
+
+v1 also adds two product pieces the live app exposed as missing:
+- **Profile / "My trips"** — one place where an owner sees and controls
+  everything of theirs (visibility, links, deletion).
+- **Ownership attribution** — Explore and trip pages name the author
+  (profiles.handle/display_name; profiles are already publicly readable
+  under RLS, and the FK enables an embedded join).
+
+Quality bar: **per-viewport QA gates** (mobile 390px and desktop) run by
+dedicated QA agents before any visual milestone ships; the trip page must
+fit and scroll correctly on both.
+
 The **tool trace is part of the design, not debug output**. Every answer carries a
 collapsible list of the tools that produced it, set as marginalia. It proves the numbers
 were computed rather than invented — the trust problem every AI feature has — and it
