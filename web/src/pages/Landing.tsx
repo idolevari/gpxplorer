@@ -14,7 +14,7 @@ export function Landing() {
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            'radial-gradient(ellipse 70% 55% at 50% 42%, rgba(250,247,242,0.2), rgba(250,247,242,0.92) 78%)',
+            'radial-gradient(ellipse 62% 48% at 50% 40%, rgba(250,247,242,0.88) 35%, rgba(250,247,242,0) 78%)',
         }}
       />
       <div className="relative max-w-3xl mx-auto px-6 py-24 lg:py-36 text-center">

@@ -50,8 +50,8 @@ export function ContourField() {
       LEVELS.forEach((L, li) => {
         const major = li % 4 === 0;
         ctx.beginPath();
-        ctx.lineWidth = major ? 1.1 : 0.65;
-        ctx.strokeStyle = major ? 'rgba(201,79,50,0.14)' : 'rgba(201,79,50,0.07)';
+        ctx.lineWidth = major ? 1.5 : 0.9;
+        ctx.strokeStyle = major ? 'rgba(201,79,50,0.34)' : 'rgba(201,79,50,0.16)';
         for (let j = 0; j < gr; j++) for (let i = 0; i < gc; i++) {
           const x = i * CELL, y = j * CELL;
           const v0 = g[j][i], v1 = g[j][i + 1], v2 = g[j + 1][i + 1], v3 = g[j + 1][i];
