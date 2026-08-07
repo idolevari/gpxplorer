@@ -10,6 +10,7 @@ import { useAuth } from '../lib/auth-context';
 import { activityLabel } from '../lib/activity';
 import { TripMap } from '../components/TripMap';
 import { ElevationStrip } from '../components/ElevationStrip';
+import { OwnerPanel } from '../components/OwnerPanel';
 
 export function Trip({ mode }: { mode: 'id' | 'token' }) {
   const params = useParams();
@@ -89,8 +90,12 @@ export function Trip({ mode }: { mode: 'id' | 'token' }) {
           <p className="text-[var(--dim)] leading-relaxed mb-6 max-w-prose">{trip.description}</p>
         )}
 
-        {/* Task 5 mounts the owner panel here */}
-        {isOwner && <div id="owner-panel-slot" />}
+        {isOwner && mode === 'id' && (
+          <OwnerPanel
+            trip={trip}
+            onChanged={(t) => setData({ trip: t, days })}
+          />
+        )}
 
         <dl className="grid grid-cols-2 gap-x-6 gap-y-4 my-8">
           {metricRows(trip.activity_type, totals, days.length).map((r) => (
