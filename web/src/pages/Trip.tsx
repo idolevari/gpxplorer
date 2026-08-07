@@ -43,7 +43,7 @@ export function Trip({ mode }: { mode: 'id' | 'token' }) {
   );
 
   if (error) {
-    return <p role="alert" className="p-10 text-[var(--red)]">Couldn't load this trip: {error}</p>;
+    return <p role="alert" className="p-10 text-[var(--coral-deep)]">Couldn't load this trip: {error}</p>;
   }
   if (data === 'loading') {
     return <p className="p-10 text-[var(--dim)]">Loading…</p>;
@@ -114,17 +114,17 @@ export function Trip({ mode }: { mode: 'id' | 'token' }) {
               <span className="min-w-0 flex-1 truncate">
                 {d.title ?? d.date ?? `Day ${d.day_index}`}
               </span>
-              <span className="text-[var(--dim)] tabular-nums">{formatKm(d.distance_m)}</span>
-              <span className="text-[var(--dim)] tabular-nums hidden sm:inline">
+              <span className="data text-[13px] text-[var(--dim)] tabular-nums">{formatKm(d.distance_m)}</span>
+              <span className="data text-[13px] text-[var(--dim)] tabular-nums hidden sm:inline">
                 {formatMetres(d.elevation_gain_m)}
               </span>
-              <span className="text-[var(--dim)] tabular-nums hidden sm:inline">
+              <span className="data text-[13px] text-[var(--dim)] tabular-nums hidden sm:inline">
                 {formatDuration(d.moving_time_s)}
               </span>
               {d.gpx_path && (
                 <button
                   onClick={() => downloadDay(d)}
-                  className="eyebrow hover:text-[var(--amber)] min-h-11 min-w-11 inline-flex items-center justify-center -m-2 p-2"
+                  className="eyebrow hover:text-[var(--coral-deep)] min-h-11 min-w-11 inline-flex items-center justify-center -m-2 p-2"
                   aria-label={`Download GPX for day ${d.day_index}`}
                 >
                   gpx

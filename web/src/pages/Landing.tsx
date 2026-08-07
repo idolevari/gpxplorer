@@ -12,11 +12,11 @@ export function Landing() {
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            'radial-gradient(ellipse 70% 55% at 50% 42%, rgba(9,13,12,0.2), rgba(9,13,12,0.9) 78%)',
+            'radial-gradient(ellipse 70% 55% at 50% 42%, rgba(250,247,242,0.2), rgba(250,247,242,0.92) 78%)',
         }}
       />
       <div className="relative max-w-3xl mx-auto px-6 py-24 lg:py-36 text-center">
-        <p className="eyebrow mb-6 text-[var(--amber)]">The exploration journal</p>
+        <p className="eyebrow mb-6 text-[var(--coral-deep)]">The exploration journal</p>
         <h1 className="font-display text-5xl lg:text-7xl leading-[1.02] mb-8 text-balance">
           Keep the ground you covered.
         </h1>
@@ -27,11 +27,11 @@ export function Landing() {
         <div className="flex items-center justify-center gap-6 flex-wrap">
           <Link
             to={user ? '/new' : '/signin'}
-            className="bg-[var(--amber)] text-[var(--amber-ink)] px-8 py-4 eyebrow on-fill"
+            className="bg-[var(--coral)] text-white px-8 py-4 eyebrow on-fill pill"
           >
             Start a trip
           </Link>
-          <Link to="/trips" className="eyebrow pb-1 border-b border-[var(--hair)] hover:text-[var(--amber)] hover:border-[var(--amber)]">
+          <Link to="/trips" className="eyebrow pb-1 border-b border-[var(--hair)] hover:text-[var(--coral-deep)] hover:border-[var(--coral)]">
             Explore public trips
           </Link>
         </div>

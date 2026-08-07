@@ -22,7 +22,7 @@ export function NewTrip() {
   if (!user) {
     return (
       <p className="p-10 text-[var(--dim)]">
-        <Link className="text-[var(--amber)] underline" to="/signin">Sign in</Link> to create a trip.
+        <Link className="text-[var(--coral-deep)] underline" to="/signin">Sign in</Link> to create a trip.
       </p>
     );
   }
@@ -74,7 +74,7 @@ export function NewTrip() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Dan to Eilat — Cross-Israel"
-            className="bg-transparent border-0 border-b border-[var(--hair)] focus:border-[var(--amber)] py-2 font-display text-2xl text-[var(--bone)] outline-none"
+            className="bg-transparent border-0 border-b border-[var(--hair)] focus:border-[var(--coral)] py-2 font-display text-2xl text-[var(--ink-t)] outline-none"
           />
         </label>
 
@@ -85,9 +85,9 @@ export function NewTrip() {
               <label key={a} className="flex items-baseline gap-2 cursor-pointer">
                 <input
                   type="radio" name="activity" checked={activity === a}
-                  onChange={() => setActivity(a)} className="accent-[#d4a04a]"
+                  onChange={() => setActivity(a)} className="accent-[#c94f32]"
                 />
-                <span className={activity === a ? 'text-[var(--amber)]' : ''}>{activityLabel(a)}</span>
+                <span className={activity === a ? 'text-[var(--coral-deep)]' : ''}>{activityLabel(a)}</span>
               </label>
             ))}
           </div>
@@ -98,7 +98,7 @@ export function NewTrip() {
           <input
             type="file" accept=".gpx,application/gpx+xml" multiple
             onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
-            className="text-[var(--dim)] file:bg-[var(--amber)] file:text-[var(--amber-ink)] file:border-0 file:px-4 file:py-2 file:mr-4 file:font-mono file:text-xs file:uppercase file:tracking-widest"
+            className="text-[var(--dim)] file:bg-[var(--coral)] file:text-white file:border-0 file:rounded-full file:px-4 file:py-2 file:mr-4 file:text-xs file:font-semibold file:uppercase file:tracking-widest"
           />
           {files.length > 0 && (
             <span className="text-[var(--dim)]">{files.length} file{files.length > 1 ? 's' : ''} — becomes {files.length} day{files.length > 1 ? 's' : ''}</span>
@@ -112,19 +112,19 @@ export function NewTrip() {
               <label key={v} className="flex items-baseline gap-2 cursor-pointer">
                 <input
                   type="radio" name="vis" checked={visibility === v}
-                  onChange={() => setVisibility(v)} className="accent-[#d4a04a]"
+                  onChange={() => setVisibility(v)} className="accent-[#c94f32]"
                 />
-                <span className={visibility === v ? 'text-[var(--amber)]' : ''}>{v}</span>
+                <span className={visibility === v ? 'text-[var(--coral-deep)]' : ''}>{v}</span>
               </label>
             ))}
           </div>
         </fieldset>
 
-        {error && <p role="alert" className="text-[var(--red)]">{error}</p>}
+        {error && <p role="alert" className="text-[var(--coral-deep)]">{error}</p>}
 
         <button
           type="submit" disabled={busy}
-          className="self-start bg-[var(--amber)] text-[var(--amber-ink)] px-8 py-3 eyebrow on-fill disabled:opacity-50"
+          className="self-start bg-[var(--coral)] text-white px-8 py-3 eyebrow on-fill pill disabled:opacity-50"
         >
           {busy ? 'Reading your days…' : 'Create trip'}
         </button>

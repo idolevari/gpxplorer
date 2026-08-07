@@ -1,19 +1,24 @@
 @import "tailwindcss";
 
+/* v1 light theme — spec §9.1: paper ground, coral accent, soft radius. */
 :root {
-  --ink:    #090d0c;
-  --ink-2:  #0d1312;
-  --raise:  #111917;
-  --bone:   #e6e0d2;
-  --dim:    #7f857e;
-  --faint:  rgba(230, 224, 210, 0.34);
-  --hair:   rgba(230, 224, 210, 0.14);
-  --hair-2: rgba(230, 224, 210, 0.07);
-  --amber:  #d4a04a;
-  --amber-ink: #100c06;
-  --red:    #c94f32;
+  --paper: #faf7f2;
+  --card:  #ffffff;
+  --ink-t: #1f2a2e;
+  --dim:   #5c6b70;
+  --hair:   rgba(31, 42, 46, 0.12);
+  --hair-2: rgba(31, 42, 46, 0.06);
+  /* Survey coral: fills (white text), the route, borders, focus. As small
+     text on paper it is 4.23:1 — below AA — so accent *text* and errors use
+     --coral-deep (6.05:1 on paper) instead. */
+  --coral:      #c94f32;
+  --coral-deep: #a63a20;
+  --coral-soft: #f7e8e4;
+  /* Amber, demoted: small warm details only — never text (3.72:1 on paper). */
+  --amber: #a8761f;
 
   --f-display: "Didot", "Bodoni 72", "Hoefler Text", Georgia, serif;
+  --f-sans: -apple-system, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
   --f-mono: ui-monospace, Menlo, "SF Mono", "Roboto Mono", monospace;
 }
 
@@ -23,45 +28,63 @@ html, body, #root {
 
 body {
   margin: 0;
-  background: var(--ink);
-  color: var(--bone);
-  font-family: var(--f-mono);
-  font-size: 13px;
-  line-height: 1.55;
+  background: var(--paper);
+  color: var(--ink-t);
+  font-family: var(--f-sans);
+  font-size: 15px;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
 
-.font-display {
-  font-family: var(--f-display);
-  font-weight: 400;
-}
+/* In the components layer so colour/typography utilities (text-[...],
+   hover:text-[...]) can override these — unlayered rules would beat every
+   Tailwind utility, which is exactly how the dark theme's 1.22:1 CTA bug
+   happened. */
+@layer components {
+  .font-display {
+    font-family: var(--f-display);
+    font-weight: 400;
+  }
 
-/* Letterspaced uppercase micro-label — the survey sheet's marginalia voice. */
-.eyebrow {
-  font-family: var(--f-mono);
-  font-size: 10px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--faint);
-}
+  /* Letterspaced uppercase micro-label — quiet marginalia, AA on paper. */
+  .eyebrow {
+    font-family: var(--f-sans);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--dim);
+  }
 
-/* eyebrow is a label voice, not a button voice: filled buttons override it */
-.eyebrow.on-fill { color: var(--amber-ink); }
+  /* eyebrow is a label voice, not a button voice: coral fills carry white text */
+  .eyebrow.on-fill { color: #ffffff; }
 
-.hairline-t { border-top: 1px solid var(--hair); }
-.hairline-b { border-bottom: 1px solid var(--hair); }
+  /* Menlo survives only for numerals and data readouts. */
+  .data { font-family: var(--f-mono); }
 
-@media (min-width: 1024px) {
-  .lg\:hairline-r { border-right: 1px solid var(--hair); }
+  .card {
+    background: var(--card);
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(31, 42, 46, 0.08);
+  }
+
+  .pill { border-radius: 999px; }
+
+  .hairline-t { border-top: 1px solid var(--hair); }
+  .hairline-b { border-bottom: 1px solid var(--hair); }
+
+  @media (min-width: 1024px) {
+    .lg\:hairline-r { border-right: 1px solid var(--hair); }
+  }
 }
 
 ::selection {
-  background: var(--amber);
-  color: var(--amber-ink);
+  background: var(--coral);
+  color: #ffffff;
 }
 
 *:focus-visible {
-  outline: 1px solid var(--bone);
+  outline: 2px solid var(--coral);
   outline-offset: 3px;
 }
 

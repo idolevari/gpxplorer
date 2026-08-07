@@ -40,28 +40,28 @@ export function ElevationStrip({ profile, onHover }: ElevationStripProps) {
         >
           <defs>
             <linearGradient id="elev" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#d4a04a" stopOpacity={0.35} />
-              <stop offset="100%" stopColor="#d4a04a" stopOpacity={0.02} />
+              <stop offset="0%" stopColor="#c94f32" stopOpacity={0.22} />
+              <stop offset="100%" stopColor="#c94f32" stopOpacity={0.02} />
             </linearGradient>
           </defs>
           <XAxis
             dataKey="distance"
             unit=" km"
             interval="preserveStartEnd"
-            tick={{ fill: '#7f857e', fontSize: 10, fontFamily: 'Menlo, monospace' }}
+            tick={{ fill: '#5c6b70', fontSize: 10, fontFamily: 'Menlo, monospace' }}
             axisLine={false}
             tickLine={false}
             height={20}
           />
           <YAxis hide domain={['auto', 'auto']} />
           <Tooltip
-            cursor={{ stroke: '#e6e0d2', strokeDasharray: '3 3' }}
+            cursor={{ stroke: '#5c6b70', strokeDasharray: '3 3' }}
             content={() => null}
           />
           <Area
             type="monotone"
             dataKey="elevation"
-            stroke="#d4a04a"
+            stroke="#c94f32"
             strokeWidth={1.5}
             fill="url(#elev)"
             connectNulls

@@ -20,7 +20,7 @@ export function Explore() {
       <h1 className="font-display text-4xl mb-10">Explore</h1>
 
       {error && (
-        <p role="alert" className="text-[var(--red)]">
+        <p role="alert" className="text-[var(--coral-deep)]">
           Couldn't load trips: {error}
         </p>
       )}
@@ -31,14 +31,14 @@ export function Explore() {
         </p>
       )}
 
-      <ul className="list-none m-0 p-0">
+      <ul className="list-none m-0 p-0 flex flex-col gap-4">
         {trips?.map((t) => (
-          <li key={t.id} className="hairline-t">
+          <li key={t.id} className="card">
             <Link
               to={`/trip/${t.id}`}
-              className="flex items-baseline gap-6 py-5 group flex-wrap"
+              className="flex items-baseline gap-6 px-6 py-5 group flex-wrap"
             >
-              <span className="font-display text-xl group-hover:text-[var(--amber)]">
+              <span className="font-display text-xl group-hover:text-[var(--coral-deep)]">
                 {t.title}
               </span>
               <span className="eyebrow">{activityLabel(t.activity_type)}</span>

@@ -46,12 +46,12 @@ export function SignIn() {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
             aria-label="Email address"
-            className="bg-transparent border-0 border-b border-[var(--hair)] focus:border-[var(--amber)] px-0 py-2 font-mono text-[var(--bone)] outline-none w-72"
+            className="bg-transparent border-0 border-b border-[var(--hair)] focus:border-[var(--coral)] px-0 py-2 text-[var(--ink-t)] outline-none w-72"
           />
-          <button type="submit" className="mt-6 bg-[var(--amber)] text-[var(--amber-ink)] px-6 py-3 eyebrow on-fill">
+          <button type="submit" className="mt-6 bg-[var(--coral)] text-white px-6 py-3 eyebrow on-fill pill">
             Send link
           </button>
-          {error && <p role="alert" className="text-[var(--red)] text-sm">{error}</p>}
+          {error && <p role="alert" className="text-[var(--coral-deep)] text-sm">{error}</p>}
         </form>
       )}
     </main>

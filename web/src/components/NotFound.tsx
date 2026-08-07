@@ -8,7 +8,7 @@ export function NotFound() {
       <p className="text-[var(--dim)] mb-6">
         The page you're after doesn't exist or has moved.
       </p>
-      <Link to="/" className="eyebrow border-b border-[var(--hair)] hover:text-[var(--amber)]">
+      <Link to="/" className="eyebrow border-b border-[var(--hair)] hover:text-[var(--coral-deep)]">
         Back to the start
       </Link>
     </div>

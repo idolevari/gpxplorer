@@ -56,7 +56,7 @@ export function TripMap({ days, hovered }: TripMapProps) {
     <Map
       ref={mapRef}
       mapboxAccessToken={TOKEN}
-      mapStyle="mapbox://styles/mapbox/dark-v11"
+      mapStyle="mapbox://styles/mapbox/light-v11"
       initialViewState={
         bounds
           ? { bounds: [bounds.minLon, bounds.minLat, bounds.maxLon, bounds.maxLat], fitBoundsOptions: { padding: 60 } }
@@ -80,7 +80,7 @@ export function TripMap({ days, hovered }: TripMapProps) {
         <Marker longitude={hovered.lon} latitude={hovered.lat}>
           <div
             aria-hidden="true"
-            className="w-3 h-3 rounded-full bg-[var(--amber)] ring-4 ring-[rgba(212,160,74,0.3)]"
+            className="w-3 h-3 rounded-full bg-[var(--coral)] ring-4 ring-[rgba(201,79,50,0.3)]"
           />
         </Marker>
       )}

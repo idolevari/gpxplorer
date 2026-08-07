@@ -5,15 +5,15 @@ export function Shell() {
   const { user, signOut } = useAuth();
   return (
     <div className="min-h-full flex flex-col">
-      <header className="hairline-b flex items-baseline gap-8 px-6 py-4 flex-wrap">
-        <Link to="/" className="font-display text-xl tracking-wide text-[var(--bone)]">
+      <header className="bg-[var(--paper)] hairline-b flex items-baseline gap-8 px-6 py-4 flex-wrap">
+        <Link to="/" className="font-display text-xl tracking-wide text-[var(--ink-t)]">
           GPXplorer
         </Link>
         <nav className="flex items-baseline gap-6" aria-label="Primary">
           <NavLink
             to="/trips"
             className={({ isActive }) =>
-              `eyebrow pb-1 border-b ${isActive ? 'text-[var(--amber)] border-[var(--amber)]' : 'border-transparent hover:text-[var(--bone)]'}`
+              `eyebrow pb-1 border-b ${isActive ? 'text-[var(--coral-deep)] border-[var(--coral)]' : 'border-transparent hover:text-[var(--ink-t)]'}`
             }
           >
             Explore
@@ -22,7 +22,7 @@ export function Shell() {
             <NavLink
               to="/new"
               className={({ isActive }) =>
-                `eyebrow pb-1 border-b ${isActive ? 'text-[var(--amber)] border-[var(--amber)]' : 'border-transparent hover:text-[var(--bone)]'}`
+                `eyebrow pb-1 border-b ${isActive ? 'text-[var(--coral-deep)] border-[var(--coral)]' : 'border-transparent hover:text-[var(--ink-t)]'}`
               }
             >
               New trip
@@ -31,11 +31,11 @@ export function Shell() {
         </nav>
         <div className="ml-auto">
           {user ? (
-            <button onClick={() => void signOut()} className="eyebrow hover:text-[var(--amber)]">
+            <button onClick={() => void signOut()} className="eyebrow hover:text-[var(--coral-deep)]">
               Sign out
             </button>
           ) : (
-            <Link to="/signin" className="eyebrow hover:text-[var(--amber)]">
+            <Link to="/signin" className="eyebrow hover:text-[var(--coral-deep)]">
               Sign in
             </Link>
           )}
