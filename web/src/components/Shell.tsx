@@ -9,14 +9,14 @@ export function Shell() {
           auth affordance inline at 390px instead of wrapping to its own row.
           h-16 pins the height exactly — the trip page's lg:h-[calc(100vh-64px)]
           depends on it (a font-derived height is fractional and drifts). */}
-      <header className="bg-[var(--paper)] hairline-b h-16 flex flex-nowrap items-baseline gap-4 sm:gap-8 px-4 sm:px-6 pt-4">
+      <header className="bg-[var(--paper)] hairline-b h-16 flex flex-nowrap items-baseline gap-3 sm:gap-8 px-4 sm:px-6 pt-4">
         <Link
           to="/"
           className="font-display text-xl tracking-wide text-[var(--ink-t)] whitespace-nowrap shrink-0"
         >
           GPXplorer
         </Link>
-        <nav className="flex flex-nowrap items-baseline gap-4 sm:gap-6" aria-label="Primary">
+        <nav className="flex flex-nowrap items-baseline gap-3 sm:gap-6" aria-label="Primary">
           <NavLink
             to="/trips"
             className={({ isActive }) =>
@@ -32,7 +32,21 @@ export function Shell() {
                 `eyebrow whitespace-nowrap pb-1 border-b ${isActive ? 'text-[var(--coral-deep)] border-[var(--coral)]' : 'border-transparent hover:text-[var(--ink-t)]'}`
               }
             >
-              New trip
+              {/* "New trip" at sm+; "New" alone below the breakpoint keeps the
+                  390px header to one row (contract in the comment above). */}
+              <span className="sm:hidden">New</span>
+              <span className="hidden sm:inline">New trip</span>
+            </NavLink>
+          )}
+          {user && (
+            <NavLink
+              to="/me"
+              className={({ isActive }) =>
+                `eyebrow whitespace-nowrap pb-1 border-b ${isActive ? 'text-[var(--coral-deep)] border-[var(--coral)]' : 'border-transparent hover:text-[var(--ink-t)]'}`
+              }
+            >
+              <span className="sm:hidden">Trips</span>
+              <span className="hidden sm:inline">My trips</span>
             </NavLink>
           )}
         </nav>

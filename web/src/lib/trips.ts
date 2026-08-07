@@ -62,6 +62,11 @@ export async function rotateShareToken(id: string): Promise<string> {
   return data as string;
 }
 
+export async function deleteTrip(id: string): Promise<void> {
+  const { error } = await supabase.from('trips').delete().eq('id', id);
+  if (error) throw new Error(error.message);
+}
+
 export interface TripTotals {
   distance_m: number | null;
   moving_distance_m: number | null;

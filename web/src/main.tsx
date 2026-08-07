@@ -8,6 +8,7 @@ import { Explore } from './pages/Explore'
 import { SignIn } from './pages/SignIn'
 import { Trip } from './pages/Trip'
 import { NewTrip } from './pages/NewTrip'
+import { MyTrips } from './pages/MyTrips'
 import { NotFound } from './components/NotFound'
 import './index.css'
 
@@ -22,6 +23,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="/trip/:id" element={<Trip mode="id" />} />
             <Route path="/t/:token" element={<Trip mode="token" />} />
             <Route path="/new" element={<NewTrip />} />
+            <Route path="/me" element={<MyTrips />} />
             <Route path="/signin" element={<SignIn />} />
             <Route path="*" element={<NotFound />} />
           </Route>
