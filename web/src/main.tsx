@@ -6,6 +6,7 @@ import { Shell } from './components/Shell'
 import { Explore } from './pages/Explore'
 import { SignIn } from './pages/SignIn'
 import { Trip } from './pages/Trip'
+import { NewTrip } from './pages/NewTrip'
 import { Placeholder } from './components/Placeholder'
 import './index.css'
 
@@ -19,7 +20,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="/trips" element={<Explore />} />
             <Route path="/trip/:id" element={<Trip mode="id" />} />
             <Route path="/t/:token" element={<Trip mode="token" />} />
-            <Route path="/new" element={<Placeholder name="New trip" />} />
+            <Route path="/new" element={<NewTrip />} />
             <Route path="/signin" element={<SignIn />} />
             <Route path="*" element={<Placeholder name="Not found" />} />
           </Route>
