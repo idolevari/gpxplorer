@@ -77,71 +77,84 @@ export function Trip({ mode }: { mode: 'id' | 'token' }) {
   };
 
   return (
-    <div className="h-full flex flex-col lg:flex-row min-h-0">
-      {/* left: the sheet */}
-      <div className="lg:w-[420px] shrink-0 overflow-y-auto px-6 py-8 lg:hairline-r">
-        <p className="eyebrow mb-2">
-          {activityLabel(trip.activity_type)}
-          {trip.fidelity === 'reconstructed' && ' · reconstructed'}
-          {mode === 'token' && ' · shared link'}
-        </p>
-        <h1 className="font-display text-4xl leading-tight mb-2">{trip.title}</h1>
-        {trip.description && (
-          <p className="text-[var(--dim)] leading-relaxed mb-6 max-w-prose">{trip.description}</p>
-        )}
+    // Mobile: one natural document flow — header block, map, elevation strip,
+    // metrics, days — reordered with `order-*` (no duplicated markup).
+    // Desktop (lg+): two columns pinned to the viewport; the sheet scrolls
+    // independently, the media column always ends at the viewport bottom.
+    // 64px = the Shell header's pinned h-16.
+    <div className="flex flex-col lg:flex-row lg:h-[calc(100vh-64px)]">
+      {/* left: the sheet. `contents` on mobile lets its two halves split
+          around the media column; on lg it becomes the scrolling column. */}
+      <div className="contents lg:block lg:w-[420px] lg:shrink-0 lg:overflow-y-auto lg:px-6 lg:py-8 lg:hairline-r">
+        <div className="order-1 px-6 pt-8 lg:p-0">
+          <p className="eyebrow mb-2">
+            {activityLabel(trip.activity_type)}
+            {trip.fidelity === 'reconstructed' && ' · reconstructed'}
+            {mode === 'token' && ' · shared link'}
+          </p>
+          <h1 className="font-display text-4xl leading-tight mb-2">{trip.title}</h1>
+          {trip.description && (
+            <p className="text-[var(--dim)] leading-relaxed mb-6 max-w-prose">{trip.description}</p>
+          )}
 
-        {isOwner && mode === 'id' && (
-          <OwnerPanel
-            trip={trip}
-            onChanged={(t) => setData({ trip: t, days })}
-          />
-        )}
+          {isOwner && mode === 'id' && (
+            <OwnerPanel
+              trip={trip}
+              onChanged={(t) => setData({ trip: t, days })}
+            />
+          )}
+        </div>
 
-        <dl className="grid grid-cols-2 gap-x-6 gap-y-4 my-8">
-          {metricRows(trip.activity_type, totals, days.length).map((r) => (
-            <div key={r.label}>
-              <dt className="eyebrow">{r.label}</dt>
-              <dd className="font-display text-2xl m-0 tabular-nums">{r.value}</dd>
-            </div>
-          ))}
-        </dl>
+        <div className="order-3 px-6 pb-8 lg:p-0">
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-4 my-8">
+            {metricRows(trip.activity_type, totals, days.length).map((r) => (
+              <div key={r.label}>
+                <dt className="eyebrow">{r.label}</dt>
+                <dd className="font-display text-2xl m-0 tabular-nums">{r.value}</dd>
+              </div>
+            ))}
+          </dl>
 
-        <p className="eyebrow hairline-t pt-4 mb-3">Days</p>
-        <ol className="list-none m-0 p-0">
-          {days.map((d) => (
-            <li key={d.id} className="hairline-t flex items-baseline gap-3 py-3">
-              <span className="eyebrow w-8 shrink-0">{String(d.day_index).padStart(2, '0')}</span>
-              <span className="min-w-0 flex-1 truncate">
-                {d.title ?? d.date ?? `Day ${d.day_index}`}
-              </span>
-              <span className="data text-[13px] text-[var(--dim)] tabular-nums">{formatKm(d.distance_m)}</span>
-              <span className="data text-[13px] text-[var(--dim)] tabular-nums hidden sm:inline">
-                {formatMetres(d.elevation_gain_m)}
-              </span>
-              <span className="data text-[13px] text-[var(--dim)] tabular-nums hidden sm:inline">
-                {formatDuration(d.moving_time_s)}
-              </span>
-              {d.gpx_path && (
-                <button
-                  onClick={() => downloadDay(d)}
-                  className="eyebrow hover:text-[var(--coral-deep)] min-h-11 min-w-11 inline-flex items-center justify-center -m-2 p-2"
-                  aria-label={`Download GPX for day ${d.day_index}`}
-                >
-                  gpx
-                </button>
-              )}
-            </li>
-          ))}
-        </ol>
+          <p className="eyebrow hairline-t pt-4 mb-3">Days</p>
+          <ol className="list-none m-0 p-0">
+            {days.map((d) => (
+              <li key={d.id} className="hairline-t flex items-baseline gap-3 py-3">
+                <span className="eyebrow w-8 shrink-0">{String(d.day_index).padStart(2, '0')}</span>
+                <span className="min-w-0 flex-1 truncate">
+                  {d.title ?? d.date ?? `Day ${d.day_index}`}
+                </span>
+                <span className="data text-[13px] text-[var(--dim)] tabular-nums">{formatKm(d.distance_m)}</span>
+                <span className="data text-[13px] text-[var(--dim)] tabular-nums hidden sm:inline">
+                  {formatMetres(d.elevation_gain_m)}
+                </span>
+                <span className="data text-[13px] text-[var(--dim)] tabular-nums hidden sm:inline">
+                  {formatDuration(d.moving_time_s)}
+                </span>
+                {d.gpx_path && (
+                  <button
+                    onClick={() => downloadDay(d)}
+                    className="eyebrow hover:text-[var(--coral-deep)] min-h-11 min-w-11 inline-flex items-center justify-center -m-2 p-2"
+                    aria-label={`Download GPX for day ${d.day_index}`}
+                  >
+                    gpx
+                  </button>
+                )}
+              </li>
+            ))}
+          </ol>
+        </div>
       </div>
 
       {/* right: map above elevation. The empty band on the far right is the
-          phase-4 chat column's slot -- a column gets added, not a restructure. */}
-      <div className="flex-1 min-h-[420px] flex flex-col min-w-0">
+          phase-4 chat column's slot -- a column gets added, not a restructure.
+          On mobile it sits between the header block and the metrics/days.
+          A definite height everywhere (45vh, or lg flex-1 inside the fixed-
+          height row) — Mapbox's height:100% needs it (plan bug #9). */}
+      <div className="order-2 lg:order-none flex-1 flex flex-col min-w-0 lg:min-h-0">
         <div className="h-[45vh] shrink-0 lg:h-auto lg:flex-1 lg:min-h-0">
           <TripMap days={days} hovered={hovered} />
         </div>
-        <div className="hairline-t">
+        <div className="hairline-t shrink-0">
           <ElevationStrip profile={profile} onHover={setHovered} />
         </div>
       </div>
