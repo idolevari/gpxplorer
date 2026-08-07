@@ -5,12 +5,8 @@ import { AuthProvider } from './lib/auth'
 import { Shell } from './components/Shell'
 import { Explore } from './pages/Explore'
 import { SignIn } from './pages/SignIn'
+import { Placeholder } from './components/Placeholder'
 import './index.css'
-
-// eslint-disable-next-line react-refresh/only-export-components -- entry file, not fast-refreshed
-function Placeholder({ name }: { name: string }) {
-  return <p className="p-10 text-[var(--dim)]">{name} — arriving in a later task.</p>;
-}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

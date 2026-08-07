@@ -1,16 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { ActivityType, TripRow } from '../lib/db-types';
+import type { TripRow } from '../lib/db-types';
 import { listPublicTrips } from '../lib/trips';
-
-// eslint-disable-next-line react-refresh/only-export-components -- shared helper, kept alongside its only consumer
-export function activityLabel(a: ActivityType): string {
-  const labels: Record<ActivityType, string> = {
-    cycling: 'Cycling', hiking: 'Hiking', running: 'Running',
-    campervan: 'Campervan', motorcycle: 'Motorcycle', other: 'Trip',
-  };
-  return labels[a];
-}
+import { activityLabel } from '../lib/activity';
 
 export function Explore() {
   const [trips, setTrips] = useState<TripRow[] | null>(null);

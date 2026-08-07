@@ -39,6 +39,8 @@ export function SignIn() {
           <p className="eyebrow mb-8">Magic link — no password</p>
           <input
             type="email"
+            id="signin-email"
+            name="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
