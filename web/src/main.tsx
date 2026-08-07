@@ -5,6 +5,7 @@ import { AuthProvider } from './lib/auth'
 import { Shell } from './components/Shell'
 import { Explore } from './pages/Explore'
 import { SignIn } from './pages/SignIn'
+import { Trip } from './pages/Trip'
 import { Placeholder } from './components/Placeholder'
 import './index.css'
 
@@ -16,8 +17,8 @@ createRoot(document.getElementById('root')!).render(
           <Route element={<Shell />}>
             <Route path="/" element={<Explore />} />
             <Route path="/trips" element={<Explore />} />
-            <Route path="/trip/:id" element={<Placeholder name="Trip page" />} />
-            <Route path="/t/:token" element={<Placeholder name="Shared trip" />} />
+            <Route path="/trip/:id" element={<Trip mode="id" />} />
+            <Route path="/t/:token" element={<Trip mode="token" />} />
             <Route path="/new" element={<Placeholder name="New trip" />} />
             <Route path="/signin" element={<SignIn />} />
             <Route path="*" element={<Placeholder name="Not found" />} />
